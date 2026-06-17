@@ -126,7 +126,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
   <div class="sidebar">
     <div class="sidebar-logo">
       <div class="logo-text">Team Manager</div>
-      <div class="logo-sub">Evaluación anual 2025</div>
+      <div class="logo-sub">Evaluación anual 2026</div>
     </div>
     <div class="nav">
       <div class="nav-label" style="margin-bottom:4px">General</div>
@@ -568,7 +568,7 @@ function openModal(type,id){
       <div class="field"><label>Descripción</label><textarea id="m-texto" placeholder="Qué ocurrió o se logró..."></textarea></div>
       <div class="row-flex">
         <div class="field"><label>Tipo</label><select id="m-tipo"><option value="logro">🏆 Logro</option><option value="bloqueo">⚠️ Bloqueo</option><option value="mejora">💡 Mejora</option><option value="otro">📝 Otro</option></select></div>
-        <div class="field"><label>Fecha</label><input id="m-fecha" placeholder="Mar 2025"/></div>
+        <div class="field"><label>Fecha</label><input id="m-fecha" placeholder="Mar 2026"/></div>
       </div>
       <div class="field"><label>Anotado por</label><input id="m-manager" placeholder="Tu nombre"/></div>
       <div class="modal-actions"><button class="btn-sec" onclick="closeModal()">Cancelar</button><button class="btn-primary" onclick="saveHito()">Añadir</button></div>`;
@@ -578,8 +578,8 @@ function openModal(type,id){
       <div class="field"><label>Nombre</label><input id="m-pnombre"/></div>
       <div class="field"><label>Descripción</label><textarea id="m-pdesc" style="min-height:50px"></textarea></div>
       <div class="row-flex">
-        <div class="field"><label>Inicio</label><input id="m-pinicio" placeholder="Ene 2025"/></div>
-        <div class="field"><label>Fin</label><input id="m-pfin" placeholder="Jun 2025"/></div>
+        <div class="field"><label>Inicio</label><input id="m-pinicio" placeholder="Ene 2026"/></div>
+        <div class="field"><label>Fin</label><input id="m-pfin" placeholder="Jun 2026"/></div>
       </div>
       <div class="field"><label>Estado</label><select id="m-pestado"><option value="activo">Activo</option><option value="completado">Completado</option><option value="pausado">Pausado</option></select></div>
       <div class="field"><label>Desarrolladores</label><div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px">${checks}</div></div>
@@ -621,7 +621,7 @@ async function saveHito(){
   const devId=document.getElementById('m-dev').value;
   const texto=document.getElementById('m-texto').value.trim();
   if(!texto){alert('La descripción es obligatoria');return;}
-  const h={id:'h_'+Date.now(),devId,texto,tipo:document.getElementById('m-tipo').value,fecha:document.getElementById('m-fecha').value.trim()||'2025',manager:document.getElementById('m-manager').value.trim()};
+  const h={id:'h_'+Date.now(),devId,texto,tipo:document.getElementById('m-tipo').value,fecha:document.getElementById('m-fecha').value.trim()||'2026',manager:document.getElementById('m-manager').value.trim()};
   closeModal();setSyncStatus('Guardando...');
   try{state.hitos.push(h);await saveHitoRow(h);showToast('Hito añadido');refresh();}
   catch(e){showToast('Error');console.error(e);}
