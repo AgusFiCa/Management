@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Manager</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#F7F8FA;color:#1a1a1a;min-height:100vh}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:230px;background:#fff;border-right:1px solid #e5e7eb;display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-logo{padding:18px 16px;border-bottom:1px solid #e5e7eb}
+.logo-text{font-size:14px;font-weight:600;color:#111}
+.logo-sub{font-size:11px;color:#9ca3af;margin-top:2px}
+.nav{padding:10px 8px;flex:1;overflow-y:auto}
+.nav-label{font-size:10px;font-weight:600;color:#9ca3af;padding:4px 8px;text-transform:uppercase;letter-spacing:0.08em}
+.nav-item{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:8px;cursor:pointer;font-size:13px;color:#6b7280;border:none;background:none;width:100%;text-align:left;transition:all 0.1s}
+.nav-item:hover{background:#f3f4f6;color:#111}
+.nav-item.active{background:#f3f4f6;color:#111;font-weight:500}
+.nav-item svg{flex-shrink:0;width:16px;height:16px}
+.sidebar-bottom{padding:10px 8px;border-top:1px solid #e5e7eb}
+.dev-pill{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;cursor:pointer;font-size:12px;color:#6b7280;border:none;background:none;width:100%;text-align:left;transition:all 0.1s}
+.dev-pill:hover{background:#f3f4f6}
+.dev-pill.active{background:#f3f4f6;color:#111;font-weight:500}
+.avatar{width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:9px;font-weight:600;flex-shrink:0}
+.main{flex:1;overflow:hidden;display:flex;flex-direction:column;min-width:0}
+.topbar{padding:14px 24px;border-bottom:1px solid #e5e7eb;background:#fff;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.page-title{font-size:16px;font-weight:600}
+.page-sub{font-size:12px;color:#9ca3af;margin-top:2px}
+.btn-primary{background:#111;color:#fff;border:none;padding:7px 16px;border-radius:8px;font-size:13px;font-weight:500;cursor:pointer;display:flex;align-items:center;gap:6px}
+.btn-primary:hover{opacity:0.85}
+.btn-sec{background:#fff;border:1px solid #e5e7eb;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer;color:#6b7280}
+.btn-sec:hover{background:#f3f4f6}
+.btn-danger{background:#fff;border:1px solid #fca5a5;color:#dc2626;padding:6px 14px;border-radius:8px;font-size:12px;cursor:pointer}
+.content{flex:1;overflow-y:auto;padding:20px 24px}
+.section{display:none}
+.section.active{display:block}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:24px}
+.metric-card{background:#f9fafb;border-radius:10px;padding:14px 16px}
+.metric-label{font-size:11px;color:#9ca3af;margin-bottom:5px}
+.metric-val{font-size:24px;font-weight:600;color:#111}
+.metric-sub{font-size:11px;color:#6b7280;margin-top:3px}
+.card{background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px 18px;margin-bottom:12px}
+.avatar-lg{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0}
+.tag{font-size:10px;padding:2px 9px;border-radius:100px;font-weight:500;display:inline-block}
+.section-title{font-size:11px;font-weight:600;color:#9ca3af;margin-bottom:12px;text-transform:uppercase;letter-spacing:0.07em}
+.progress-bar{flex:1;height:5px;background:#f3f4f6;border-radius:100px;overflow:hidden}
+.progress-fill{height:100%;border-radius:100px;background:#111}
+.hito-item{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6}
+.hito-item:last-child{border-bottom:none}
+.hito-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px;font-size:14px}
+.hito-text{font-size:13px;color:#111;line-height:1.4}
+.hito-date{font-size:11px;color:#9ca3af;margin-top:2px}
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.4);display:flex;align-items:center;justify-content:center;z-index:1000}
+.modal{background:#fff;border-radius:14px;padding:22px;width:440px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.modal-title{font-size:15px;font-weight:600;margin-bottom:18px;display:flex;justify-content:space-between;align-items:center}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;color:#6b7280;margin-bottom:5px;font-weight:500;text-transform:uppercase;letter-spacing:0.05em}
+.field input,.field select,.field textarea{width:100%;padding:8px 11px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;background:#fff;color:#111;outline:none;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:#9ca3af}
+.field textarea{resize:vertical;min-height:70px;line-height:1.5}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;padding-top:14px;border-top:1px solid #f3f4f6}
+.row-flex{display:flex;gap:12px}
+.row-flex .field{flex:1}
+.star{font-size:20px;cursor:pointer;color:#e5e7eb}
+.star.on{color:#f59e0b}
+.eval-stars{display:flex;gap:4px}
+.badge-activo{background:#dcfce7;color:#166534}
+.badge-completado{background:#dbeafe;color:#1e40af}
+.badge-pausado{background:#fef9c3;color:#854d0e}
+.toast{position:fixed;bottom:24px;right:24px;background:#111;color:#fff;padding:10px 18px;border-radius:8px;font-size:13px;z-index:2000;opacity:0;transition:opacity 0.2s;pointer-events:none}
+.toast.show{opacity:1}
+.spinner{display:inline-block;width:14px;height:14px;border:2px solid #e5e7eb;border-top-color:#111;border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:40px 20px;color:#9ca3af;font-size:13px}
+.notes-inline{width:100%;padding:9px 11px;border:1px solid #e5e7eb;border-radius:8px;font-size:13px;font-family:inherit;resize:vertical;min-height:70px;background:#fafafa;color:#111;outline:none;line-height:1.5}
+.notes-inline:focus{border-color:#9ca3af;background:#fff}
+.eval-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px 20px}
+.proj-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid #f3f4f6}
+.proj-row:last-child{border-bottom:none}
+.proj-dot{width:8px;height:8px;border-radius:50%;margin-top:5px;flex-shrink:0}
+/* Config screen */
+.config-screen{max-width:520px;margin:60px auto;padding:0 24px}
+.config-card{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:28px}
+.config-title{font-size:18px;font-weight:700;margin-bottom:6px}
+.config-sub{font-size:13px;color:#6b7280;margin-bottom:24px;line-height:1.6}
+.config-field{margin-bottom:16px}
+.config-field label{display:block;font-size:11px;font-weight:600;color:#6b7280;margin-bottom:5px;text-transform:uppercase;letter-spacing:0.05em}
+.config-field input,.config-field textarea{width:100%;padding:9px 12px;border:1px solid #e5e7eb;border-radius:8px;font-size:12px;font-family:monospace;color:#111;background:#fafafa;outline:none}
+.config-field input:focus,.config-field textarea:focus{border-color:#9ca3af;background:#fff}
+.config-field textarea{min-height:80px;resize:vertical;line-height:1.4}
+.alert{background:#fef9c3;border:1px solid #fde68a;border-radius:8px;padding:10px 14px;font-size:12px;color:#854d0e;margin-bottom:20px;line-height:1.6}
+@media(max-width:600px){.sidebar{display:none}.modal{width:95vw}.cards-grid{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+
+<!-- CONFIG SCREEN (shown if no credentials) -->
+<div id="config-screen" style="display:none">
+  <div class="config-screen">
+    <div class="config-card">
+      <div class="config-title">Configuración inicial</div>
+      <div class="config-sub">Pega las credenciales de tu cuenta de servicio de Google. Solo hay que hacerlo una vez — se guardan en este navegador.</div>
+      <div class="alert">⚠️ Estas credenciales se guardan en localStorage de este navegador. No compartas el archivo HTML con la clave privada ya pegada — comparte solo la URL de GitHub Pages (cada manager configura las suyas la primera vez).</div>
+      <div class="config-field">
+        <label>Sheet ID</label>
+        <input id="cfg-sheet" placeholder="1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgVE2upms"/>
+        <div style="font-size:11px;color:#9ca3af;margin-top:4px">De la URL: docs.google.com/spreadsheets/d/<b>ESTE_VALOR</b>/edit</div>
+      </div>
+      <div class="config-field">
+        <label>Client Email (cuenta de servicio)</label>
+        <input id="cfg-email" placeholder="nombre@proyecto.iam.gserviceaccount.com"/>
+      </div>
+      <div class="config-field">
+        <label>Private Key (del JSON descargado)</label>
+        <textarea id="cfg-key" placeholder="-----BEGIN RSA PRIVATE KEY-----&#10;MIIEowIBAAKCAQEA...&#10;-----END RSA PRIVATE KEY-----"></textarea>
+        <div style="font-size:11px;color:#9ca3af;margin-top:4px">Copia el valor completo del campo "private_key" del JSON, incluyendo las líneas BEGIN y END.</div>
+      </div>
+      <button class="btn-primary" onclick="saveConfig()" style="width:100%;justify-content:center;padding:10px">Guardar y continuar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div class="app" id="app" style="display:none">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-text">Team Manager</div>
+      <div class="logo-sub">Evaluación anual 2025</div>
+    </div>
+    <div class="nav">
+      <div class="nav-label" style="margin-bottom:4px">General</div>
+      <button class="nav-item active" onclick="showSection('dashboard')" id="nav-dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" onclick="showSection('proyectos')" id="nav-proyectos">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+        Proyectos
+      </button>
+      <button class="nav-item" onclick="showSection('evaluaciones')" id="nav-evaluaciones">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+        Evaluaciones
+      </button>
+    </div>
+    <div class="sidebar-bottom">
+      <div class="nav-label" style="padding:4px 8px 8px">Desarrolladores</div>
+      <div id="dev-list-sidebar"></div>
+      <button class="nav-item" onclick="openModal('dev')" style="color:#9ca3af;font-size:12px;margin-top:4px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Añadir persona
+      </button>
+      <button class="nav-item" onclick="resetConfig()" style="color:#9ca3af;font-size:11px;margin-top:2px">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14"/><path d="M4.93 4.93a10 10 0 000 14.14"/></svg>
+        Cambiar credenciales
+      </button>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="topbar">
+      <div>
+        <div class="page-title" id="page-title">Dashboard</div>
+        <div class="page-sub" id="page-sub">Resumen del equipo</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center" id="topbar-actions">
+        <span id="sync-status" style="font-size:11px;color:#9ca3af"></span>
+        <button class="btn-sec" onclick="loadAll()" style="font-size:12px">↻ Sincronizar</button>
+        <button class="btn-primary" onclick="openModal('hito')">+ Añadir hito</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="section active" id="sec-dashboard">
+        <div class="cards-grid" id="metric-cards"></div>
+        <div class="section-title">Hitos recientes</div>
+        <div id="hitos-recientes"></div>
+      </div>
+      <div class="section" id="sec-proyectos"><div id="proyectos-list"></div></div>
+      <div class="section" id="sec-evaluaciones"><div id="eval-content"></div></div>
+      <div class="section" id="sec-dev"><div id="dev-detail"></div></div>
+    </div>
+  </div>
+</div>
+
+<div id="modal-root"></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Config storage ─────────────────────────────
+function getConfig(){
+  try{ return JSON.parse(localStorage.getItem('tm_config')||'null'); }catch(e){ return null; }
+}
+function saveConfig(){
+  const sheetId = document.getElementById('cfg-sheet').value.trim();
+  const email   = document.getElementById('cfg-email').value.trim();
+  let key       = document.getElementById('cfg-key').value.trim();
+  if(!sheetId||!email||!key){ alert('Rellena todos los campos'); return; }
+  // Normalise \n literals from JSON paste
+  key = key.replace(/\\n/g,'\n');
+  localStorage.setItem('tm_config', JSON.stringify({sheetId, email, key}));
+  init();
+}
+function resetConfig(){
+  if(!confirm('¿Borrar credenciales guardadas?')) return;
+  localStorage.removeItem('tm_config');
+  location.reload();
+}
+
+// ── JWT / OAuth for Service Account ───────────
+let _accessToken = null;
+let _tokenExpiry = 0;
+
+async function getAccessToken(){
+  if(_accessToken && Date.now() < _tokenExpiry - 60000) return _accessToken;
+  const cfg = getConfig();
+
+  // Build JWT
+  const header = btoa(JSON.stringify({alg:'RS256',typ:'JWT'})).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const now = Math.floor(Date.now()/1000);
+  const claims = {
+    iss: cfg.email,
+    scope: 'https://www.googleapis.com/auth/spreadsheets',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600,
+    iat: now
+  };
+  const payload = btoa(unescape(encodeURIComponent(JSON.stringify(claims)))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const toSign = `${header}.${payload}`;
+
+  // Import private key
+  const pemBody = cfg.key.replace(/-----[^-]+-----/g,'').replace(/\s/g,'');
+  const der = Uint8Array.from(atob(pemBody), c=>c.charCodeAt(0));
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8', der.buffer,
+    {name:'RSASSA-PKCS1-v1_5', hash:'SHA-256'},
+    false, ['sign']
+  );
+
+  // Sign
+  const enc = new TextEncoder();
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, enc.encode(toSign));
+  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const jwt = `${toSign}.${sigB64}`;
+
+  // Exchange JWT for access token
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method:'POST',
+    headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body:`grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`
+  });
+  const data = await res.json();
+  if(!data.access_token) throw new Error('Token error: '+JSON.stringify(data));
+  _accessToken = data.access_token;
+  _tokenExpiry = Date.now() + data.expires_in*1000;
+  return _accessToken;
+}
+
+// ── Sheets API ─────────────────────────────────
+const SHEET_ID = () => getConfig().sheetId;
+const BASE = () => `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID()}`;
+const TAB_DEVS='Desarrolladores', TAB_HITOS='Hitos', TAB_PROYECTOS='Proyectos';
+
+async function sheetsGet(range){
+  const tok = await getAccessToken();
+  const r = await fetch(`${BASE()}/values/${encodeURIComponent(range)}`,{headers:{Authorization:`Bearer ${tok}`}});
+  if(!r.ok) throw new Error(await r.text());
+  return (await r.json()).values||[];
+}
+async function sheetsUpdate(range, values){
+  const tok = await getAccessToken();
+  const r = await fetch(`${BASE()}/values/${encodeURIComponent(range)}?valueInputOption=RAW`,{
+    method:'PUT', headers:{Authorization:`Bearer ${tok}`,'Content-Type':'application/json'},
+    body:JSON.stringify({values})
+  });
+  if(!r.ok) throw new Error(await r.text());
+}
+async function sheetsAppend(range, values){
+  const tok = await getAccessToken();
+  const r = await fetch(`${BASE()}/values/${encodeURIComponent(range)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{
+    method:'POST', headers:{Authorization:`Bearer ${tok}`,'Content-Type':'application/json'},
+    body:JSON.stringify({values})
+  });
+  if(!r.ok) throw new Error(await r.text());
+}
+
+// ── State & helpers ────────────────────────────
+const COLORS=[{bg:'#dbeafe',text:'#1e40af'},{bg:'#dcfce7',text:'#166534'},{bg:'#ede9fe',text:'#5b21b6'},{bg:'#fce7f3',text:'#9d174d'},{bg:'#ffedd5',text:'#9a3412'},{bg:'#fef9c3',text:'#854d0e'}];
+let state={devs:[],hitos:[],proyectos:[],currentSection:'dashboard',currentDev:null};
+const colorOf=i=>COLORS[i%COLORS.length];
+const initials=n=>n.trim().split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
+const showToast=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)};
+const setSyncStatus=msg=>{const el=document.getElementById('sync-status');if(el)el.textContent=msg};
+
+// ── Load / Save ────────────────────────────────
+async function initSheets(){
+  try{
+    await sheetsUpdate(`${TAB_DEVS}!A1:J1`,[['id','nombre','rol','color','skills','notas','tecnica','comunicacion','autonomia','liderazgo']]);
+    await sheetsUpdate(`${TAB_HITOS}!A1:F1`,[['id','devId','texto','tipo','fecha','manager']]);
+    await sheetsUpdate(`${TAB_PROYECTOS}!A1:H1`,[['id','nombre','descripcion','fechaInicio','fechaFin','estado','devIds','notas']]);
+  }catch(e){console.warn('initSheets:',e);}
+}
+async function loadAll(){
+  setSyncStatus('Cargando...');
+  try{
+    const [dR,hR,pR]=await Promise.all([sheetsGet(`${TAB_DEVS}!A2:J500`),sheetsGet(`${TAB_HITOS}!A2:F500`),sheetsGet(`${TAB_PROYECTOS}!A2:H500`)]);
+    state.devs=dR.filter(r=>r[0]).map(r=>({id:r[0],name:r[1]||'',role:r[2]||'',color:parseInt(r[3]||0),skills:(r[4]||'').split('|').filter(Boolean),notas:r[5]||'',eval:{tecnica:+r[6]||0,comunicacion:+r[7]||0,autonomia:+r[8]||0,liderazgo:+r[9]||0}}));
+    state.hitos=hR.filter(r=>r[0]).map(r=>({id:r[0],devId:r[1]||'',texto:r[2]||'',tipo:r[3]||'otro',fecha:r[4]||'',manager:r[5]||''}));
+    state.proyectos=pR.filter(r=>r[0]).map(r=>({id:r[0],nombre:r[1]||'',descripcion:r[2]||'',fechaInicio:r[3]||'',fechaFin:r[4]||'',estado:r[5]||'activo',devIds:(r[6]||'').split('|').filter(Boolean),notas:r[7]||''}));
+    setSyncStatus('Sincronizado');
+    setTimeout(()=>setSyncStatus(''),2000);
+    renderSidebar();refresh();
+  }catch(e){
+    setSyncStatus('Error al cargar');console.error(e);
+    if(String(e).includes('Unable to parse range')){await initSheets();await loadAll();}
+  }
+}
+async function saveDevRow(dev){
+  const rows=await sheetsGet(`${TAB_DEVS}!A2:A500`);
+  const i=rows.findIndex(r=>r[0]===dev.id);
+  const vals=[[dev.id,dev.name,dev.role,dev.color,dev.skills.join('|'),dev.notas,dev.eval.tecnica,dev.eval.comunicacion,dev.eval.autonomia,dev.eval.liderazgo]];
+  if(i>=0)await sheetsUpdate(`${TAB_DEVS}!A${i+2}:J${i+2}`,vals);
+  else await sheetsAppend(`${TAB_DEVS}!A:J`,vals);
+}
+async function deleteDevRow(id){
+  const rows=await sheetsGet(`${TAB_DEVS}!A2:A500`);
+  const i=rows.findIndex(r=>r[0]===id);
+  if(i>=0)await sheetsUpdate(`${TAB_DEVS}!A${i+2}:J${i+2}`,[['','','','','','','','','','']]);
+}
+async function saveHitoRow(h){
+  await sheetsAppend(`${TAB_HITOS}!A:F`,[[h.id,h.devId,h.texto,h.tipo,h.fecha,h.manager]]);
+}
+async function deleteHitoRow(id){
+  const rows=await sheetsGet(`${TAB_HITOS}!A2:A500`);
+  const i=rows.findIndex(r=>r[0]===id);
+  if(i>=0)await sheetsUpdate(`${TAB_HITOS}!A${i+2}:F${i+2}`,[['','','','','','']]);
+}
+async function saveProyectoRow(p){
+  const rows=await sheetsGet(`${TAB_PROYECTOS}!A2:A500`);
+  const i=rows.findIndex(r=>r[0]===p.id);
+  const vals=[[p.id,p.nombre,p.descripcion,p.fechaInicio,p.fechaFin,p.estado,p.devIds.join('|'),p.notas]];
+  if(i>=0)await sheetsUpdate(`${TAB_PROYECTOS}!A${i+2}:H${i+2}`,vals);
+  else await sheetsAppend(`${TAB_PROYECTOS}!A:H`,vals);
+}
+
+// ── Render ─────────────────────────────────────
+function refresh(){
+  const s=state.currentSection;
+  if(s==='dashboard')renderDashboard();
+  else if(s==='proyectos')renderProyectos();
+  else if(s==='evaluaciones')renderEval();
+  else if(s==='dev')renderDevDetail();
+}
+function showSection(sec,devId){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-item[id^=nav-]').forEach(n=>n.classList.remove('active'));
+  document.querySelectorAll('.dev-pill').forEach(p=>p.classList.remove('active'));
+  state.currentSection=sec;
+  const topActions=()=>`<span id="sync-status" style="font-size:11px;color:#9ca3af"></span><button class="btn-sec" onclick="loadAll()" style="font-size:12px">↻ Sincronizar</button>`;
+  if(sec==='dev'&&devId){
+    state.currentDev=devId;
+    document.getElementById('sec-dev').classList.add('active');
+    document.getElementById('dpill-'+devId)?.classList.add('active');
+    const d=state.devs.find(x=>x.id===devId);
+    document.getElementById('page-title').textContent=d?.name||'';
+    document.getElementById('page-sub').textContent=d?.role||'';
+    document.getElementById('topbar-actions').innerHTML=topActions()+`<button class="btn-primary" onclick="openModal('hito','${devId}')">+ Añadir hito</button>`;
+    renderDevDetail();
+  } else {
+    document.getElementById('sec-'+sec)?.classList.add('active');
+    document.getElementById('nav-'+sec)?.classList.add('active');
+    const titles={dashboard:['Dashboard','Resumen del equipo'],proyectos:['Proyectos','Todos los proyectos'],evaluaciones:['Evaluaciones','Resumen anual por persona']};
+    const t=titles[sec]||[sec,''];
+    document.getElementById('page-title').textContent=t[0];
+    document.getElementById('page-sub').textContent=t[1];
+    const extra={
+      dashboard:`<button class="btn-primary" onclick="openModal('hito')">+ Añadir hito</button>`,
+      proyectos:`<button class="btn-primary" onclick="openModal('proyecto')">+ Nuevo proyecto</button>`,
+      evaluaciones:''
+    };
+    document.getElementById('topbar-actions').innerHTML=topActions()+(extra[sec]||'');
+    refresh();
+  }
+}
+function renderSidebar(){
+  document.getElementById('dev-list-sidebar').innerHTML=state.devs.map(d=>{
+    const c=colorOf(d.color);
+    return `<button class="dev-pill" id="dpill-${d.id}" onclick="showSection('dev','${d.id}')">
+      <div class="avatar" style="background:${c.bg};color:${c.text}">${initials(d.name)}</div>
+      <span>${d.name.split(' ')[0]}</span></button>`;
+  }).join('');
+  if(state.currentSection==='dev'&&state.currentDev) document.getElementById('dpill-'+state.currentDev)?.classList.add('active');
+}
+function renderDashboard(){
+  const devs=state.devs,hitos=state.hitos,proyectos=state.proyectos;
+  document.getElementById('metric-cards').innerHTML=`
+    <div class="metric-card"><div class="metric-label">Desarrolladores</div><div class="metric-val">${devs.length}</div><div class="metric-sub">en el equipo</div></div>
+    <div class="metric-card"><div class="metric-label">Proyectos activos</div><div class="metric-val">${proyectos.filter(p=>p.estado==='activo').length}</div><div class="metric-sub">de ${proyectos.length} totales</div></div>
+    <div class="metric-card"><div class="metric-label">Hitos registrados</div><div class="metric-val">${hitos.length}</div><div class="metric-sub">este año</div></div>`;
+  const bgMap={logro:'#dcfce7',bloqueo:'#fef9c3',mejora:'#dbeafe',otro:'#f3f4f6'};
+  const icMap={logro:'🏆',bloqueo:'⚠️',mejora:'💡',otro:'📝'};
+  const recent=[...hitos].reverse().slice(0,8);
+  const el=document.getElementById('hitos-recientes');
+  if(!recent.length){el.innerHTML='<div class="empty">Sin hitos registrados aún.</div>';return;}
+  el.innerHTML=recent.map(h=>{
+    const dev=devs.find(d=>d.id===h.devId);
+    return `<div class="hito-item"><div class="hito-icon" style="background:${bgMap[h.tipo]||bgMap.otro}">${icMap[h.tipo]||icMap.otro}</div>
+      <div style="flex:1"><div class="hito-text">${h.texto}</div>
+      <div class="hito-date">${dev?.name||'?'} · ${h.fecha}${h.manager?' · '+h.manager:''}</div></div></div>`;
+  }).join('');
+}
+function renderProyectos(){
+  const el=document.getElementById('proyectos-list');
+  if(!state.proyectos.length){el.innerHTML='<div class="empty">Sin proyectos aún.</div>';return;}
+  el.innerHTML=state.proyectos.map(p=>{
+    const devs=state.devs.filter(d=>p.devIds.includes(d.id));
+    return `<div class="card">
+      <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">
+        <div><div style="font-size:14px;font-weight:600">${p.nombre}</div>
+          <div style="font-size:11px;color:#9ca3af;margin-top:2px">${p.fechaInicio}${p.fechaFin?' → '+p.fechaFin:' · en curso'}</div></div>
+        <span class="tag badge-${p.estado}">${p.estado}</span>
+      </div>
+      ${p.descripcion?`<div style="font-size:12px;color:#6b7280;margin-bottom:10px">${p.descripcion}</div>`:''}
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+        <span style="font-size:11px;color:#9ca3af">Equipo:</span>
+        ${devs.map(d=>{const c=colorOf(d.color);return`<div class="avatar" style="background:${c.bg};color:${c.text};width:24px;height:24px;font-size:9px" title="${d.name}">${initials(d.name)}</div>`}).join('')}
+      </div>
+      ${p.notas?`<div style="margin-top:10px;font-size:11px;color:#6b7280;background:#f9fafb;padding:8px 10px;border-radius:8px">📝 ${p.notas}</div>`:''}
+    </div>`;
+  }).join('');
+}
+function renderEval(){
+  const el=document.getElementById('eval-content');
+  if(!state.devs.length){el.innerHTML='<div class="empty">Añade desarrolladores primero.</div>';return;}
+  const dims=['tecnica','comunicacion','autonomia','liderazgo'];
+  const dL={tecnica:'Técnica',comunicacion:'Comunicación',autonomia:'Autonomía',liderazgo:'Liderazgo'};
+  el.innerHTML=state.devs.map(d=>{
+    const c=colorOf(d.color);const ev=d.eval||{};
+    const pct=Math.round(dims.reduce((a,k)=>a+(ev[k]||0),0)/(dims.length*5)*100);
+    const logros=state.hitos.filter(h=>h.devId===d.id&&h.tipo==='logro');
+    return `<div class="card">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div class="avatar-lg" style="background:${c.bg};color:${c.text}">${initials(d.name)}</div>
+        <div style="flex:1"><div style="font-size:14px;font-weight:600">${d.name}</div><div style="font-size:12px;color:#9ca3af">${d.role}</div></div>
+        <div style="text-align:right"><div style="font-size:22px;font-weight:700">${pct}%</div><div style="font-size:10px;color:#9ca3af">valoración</div></div>
+      </div>
+      <div style="height:4px;background:#f3f4f6;border-radius:100px;margin-bottom:12px;overflow:hidden"><div style="height:100%;width:${pct}%;background:#111;border-radius:100px"></div></div>
+      <div class="eval-grid" style="margin-bottom:12px">
+        ${dims.map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+          <span style="font-size:11px;color:#6b7280">${dL[k]}</span>
+          <div style="display:flex;gap:2px">${[1,2,3,4,5].map(i=>`<div style="width:10px;height:10px;border-radius:2px;background:${(ev[k]||0)>=i?'#111':'#f3f4f6'}"></div>`).join('')}</div>
+        </div>`).join('')}
+      </div>
+      ${logros.length?`<div style="font-size:11px;color:#9ca3af;margin-bottom:6px">Logros</div>${logros.map(h=>`<div style="font-size:12px;padding:3px 0;border-bottom:1px solid #f3f4f6">${h.texto} <span style="color:#9ca3af">· ${h.fecha}</span></div>`).join('')}`:''}
+      ${d.notas?`<div style="margin-top:10px;font-size:12px;background:#f9fafb;padding:8px 10px;border-radius:8px;color:#6b7280">${d.notas}</div>`:''}
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="btn-sec" onclick="openModal('evaluar','${d.id}')" style="font-size:12px">✏️ Valoración</button>
+        <button class="btn-sec" onclick="showSection('dev','${d.id}')" style="font-size:12px">👤 Perfil</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderDevDetail(){
+  const d=state.devs.find(x=>x.id===state.currentDev);
+  if(!d){document.getElementById('dev-detail').innerHTML='<div class="empty">No encontrado.</div>';return;}
+  const c=colorOf(d.color);
+  const hitos=state.hitos.filter(h=>h.devId===d.id);
+  const proyectos=state.proyectos.filter(p=>p.devIds.includes(d.id));
+  const ev=d.eval||{};
+  const dims=['tecnica','comunicacion','autonomia','liderazgo'];
+  const dL={tecnica:'Técnica',comunicacion:'Comunicación',autonomia:'Autonomía',liderazgo:'Liderazgo'};
+  const bgMap={logro:'#dcfce7',bloqueo:'#fef9c3',mejora:'#dbeafe',otro:'#f3f4f6'};
+  const icMap={logro:'🏆',bloqueo:'⚠️',mejora:'💡',otro:'📝'};
+  document.getElementById('dev-detail').innerHTML=`
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
+      <div class="avatar-lg" style="background:${c.bg};color:${c.text};width:52px;height:52px;font-size:17px">${initials(d.name)}</div>
+      <div style="flex:1">
+        <div style="font-size:17px;font-weight:700">${d.name}</div>
+        <div style="font-size:12px;color:#9ca3af;margin-top:2px">${d.role}</div>
+        <div style="display:flex;gap:5px;flex-wrap:wrap;margin-top:6px">
+          ${(d.skills||[]).map(s=>`<span class="tag" style="background:#dbeafe;color:#1e40af">${s}</span>`).join('')}
+        </div>
+      </div>
+      <button class="btn-sec" onclick="openModal('editdev','${d.id}')" style="font-size:12px">✏️ Editar</button>
+    </div>
+    <div class="section-title">Valoración</div>
+    <div class="eval-grid" style="margin-bottom:20px">
+      ${dims.map(k=>`<div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:11px;color:#6b7280;width:90px;flex-shrink:0">${dL[k]}</span>
+        <div class="progress-bar"><div class="progress-fill" style="width:${((ev[k]||0)/5)*100}%"></div></div>
+        <span style="font-size:11px;color:#6b7280;width:24px;text-align:right">${ev[k]||0}/5</span>
+      </div>`).join('')}
+    </div>
+    <div class="section-title">Notas del manager</div>
+    <div style="margin-bottom:20px">
+      <textarea class="notes-inline" id="notes-ta" placeholder="Observaciones, contexto, puntos a trabajar...">${d.notas||''}</textarea>
+      <div style="display:flex;gap:8px;margin-top:6px">
+        <button class="btn-primary" onclick="saveNotes('${d.id}')" style="font-size:12px">Guardar notas</button>
+        <span style="font-size:11px;color:#9ca3af;align-self:center" id="notes-saved"></span>
+      </div>
+    </div>
+    <div class="section-title">Hitos y eventos</div>
+    <div id="hitos-dev" style="margin-bottom:20px">
+      ${!hitos.length?'<div style="font-size:12px;color:#9ca3af;padding:8px 0">Sin hitos registrados.</div>':''}
+      ${hitos.map(h=>`<div class="hito-item">
+        <div class="hito-icon" style="background:${bgMap[h.tipo]||bgMap.otro}">${icMap[h.tipo]||icMap.otro}</div>
+        <div style="flex:1"><div class="hito-text">${h.texto}</div>
+          <div class="hito-date">${h.fecha}${h.manager?' · '+h.manager:''}</div></div>
+        <button onclick="deleteHito('${h.id}')" style="background:none;border:none;cursor:pointer;color:#d1d5db;font-size:16px;padding:2px">✕</button>
+      </div>`).join('')}
+      <button class="btn-sec" onclick="openModal('hito','${d.id}')" style="margin-top:10px;font-size:12px">+ Añadir hito</button>
+    </div>
+    ${proyectos.length?`<div class="section-title">Proyectos</div><div>
+      ${proyectos.map(p=>`<div class="proj-row">
+        <div class="proj-dot" style="background:${p.estado==='activo'?'#16a34a':p.estado==='completado'?'#2563eb':'#ca8a04'}"></div>
+        <div><div style="font-size:13px;font-weight:500">${p.nombre}</div>
+          <div style="font-size:11px;color:#9ca3af">${p.fechaInicio}${p.fechaFin?' → '+p.fechaFin:''} · ${p.estado}</div></div>
+      </div>`).join('')}</div>`:''}`;
+}
+
+// ── Actions ────────────────────────────────────
+async function saveNotes(devId){
+  const val=document.getElementById('notes-ta')?.value||'';
+  const d=state.devs.find(x=>x.id===devId);
+  if(!d)return;
+  d.notas=val;
+  setSyncStatus('Guardando...');
+  try{await saveDevRow(d);showToast('Notas guardadas');const el=document.getElementById('notes-saved');if(el){el.textContent='✓ Guardado';setTimeout(()=>{const e=document.getElementById('notes-saved');if(e)e.textContent=''},2000);}}
+  catch(e){showToast('Error al guardar');console.error(e);}
+  setSyncStatus('');
+}
+async function deleteHito(id){
+  if(!confirm('¿Eliminar este hito?'))return;
+  setSyncStatus('Eliminando...');
+  try{await deleteHitoRow(id);state.hitos=state.hitos.filter(h=>h.id!==id);showToast('Hito eliminado');renderDevDetail();}
+  catch(e){showToast('Error');console.error(e);}
+  setSyncStatus('');
+}
+window._evalTmp={};
+function setStar(dim,val){
+  window._evalTmp[dim]=val;
+  document.querySelectorAll(`.star[data-dim="${dim}"]`).forEach(s=>s.classList.toggle('on',+s.dataset.v<=val));
+}
+function closeModal(){document.getElementById('modal-root').innerHTML='';}
+function openModal(type,id){
+  const root=document.getElementById('modal-root');
+  let body='';
+  if(type==='dev'){
+    body=`<div class="modal-title">Nuevo desarrollador <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9ca3af;line-height:1">×</button></div>
+      <div class="field"><label>Nombre completo</label><input id="m-name"/></div>
+      <div class="field"><label>Rol / Puesto</label><input id="m-role"/></div>
+      <div class="field"><label>Skills (separadas por coma)</label><input id="m-skills"/></div>
+      <div class="modal-actions"><button class="btn-sec" onclick="closeModal()">Cancelar</button><button class="btn-primary" onclick="saveDev()">Guardar</button></div>`;
+  } else if(type==='editdev'){
+    const d=state.devs.find(x=>x.id===id);
+    body=`<div class="modal-title">Editar · ${d.name} <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9ca3af;line-height:1">×</button></div>
+      <div class="field"><label>Nombre</label><input id="m-name" value="${d.name}"/></div>
+      <div class="field"><label>Rol</label><input id="m-role" value="${d.role}"/></div>
+      <div class="field"><label>Skills</label><input id="m-skills" value="${(d.skills||[]).join(', ')}"/></div>
+      <div class="modal-actions">
+        <button class="btn-danger" onclick="if(confirm('¿Eliminar?'))deleteDev('${id}')">Eliminar</button>
+        <button class="btn-sec" onclick="closeModal()">Cancelar</button>
+        <button class="btn-primary" onclick="saveDev('${id}')">Guardar</button>
+      </div>`;
+  } else if(type==='hito'){
+    const opts=state.devs.map(d=>`<option value="${d.id}"${id===d.id?' selected':''}>${d.name}</option>`).join('');
+    body=`<div class="modal-title">Nuevo hito <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9ca3af;line-height:1">×</button></div>
+      <div class="field"><label>Desarrollador</label><select id="m-dev">${opts}</select></div>
+      <div class="field"><label>Descripción</label><textarea id="m-texto" placeholder="Qué ocurrió o se logró..."></textarea></div>
+      <div class="row-flex">
+        <div class="field"><label>Tipo</label><select id="m-tipo"><option value="logro">🏆 Logro</option><option value="bloqueo">⚠️ Bloqueo</option><option value="mejora">💡 Mejora</option><option value="otro">📝 Otro</option></select></div>
+        <div class="field"><label>Fecha</label><input id="m-fecha" placeholder="Mar 2025"/></div>
+      </div>
+      <div class="field"><label>Anotado por</label><input id="m-manager" placeholder="Tu nombre"/></div>
+      <div class="modal-actions"><button class="btn-sec" onclick="closeModal()">Cancelar</button><button class="btn-primary" onclick="saveHito()">Añadir</button></div>`;
+  } else if(type==='proyecto'){
+    const checks=state.devs.map(d=>`<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="pdev-${d.id}"> ${d.name}</label>`).join('');
+    body=`<div class="modal-title">Nuevo proyecto <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9ca3af;line-height:1">×</button></div>
+      <div class="field"><label>Nombre</label><input id="m-pnombre"/></div>
+      <div class="field"><label>Descripción</label><textarea id="m-pdesc" style="min-height:50px"></textarea></div>
+      <div class="row-flex">
+        <div class="field"><label>Inicio</label><input id="m-pinicio" placeholder="Ene 2025"/></div>
+        <div class="field"><label>Fin</label><input id="m-pfin" placeholder="Jun 2025"/></div>
+      </div>
+      <div class="field"><label>Estado</label><select id="m-pestado"><option value="activo">Activo</option><option value="completado">Completado</option><option value="pausado">Pausado</option></select></div>
+      <div class="field"><label>Desarrolladores</label><div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px">${checks}</div></div>
+      <div class="field"><label>Notas</label><textarea id="m-pnotas" style="min-height:50px"></textarea></div>
+      <div class="modal-actions"><button class="btn-sec" onclick="closeModal()">Cancelar</button><button class="btn-primary" onclick="saveProyecto()">Guardar</button></div>`;
+  } else if(type==='evaluar'){
+    const d=state.devs.find(x=>x.id===id);
+    window._evalTmp={...(d.eval||{})};
+    const dims=['tecnica','comunicacion','autonomia','liderazgo'];
+    const dL={tecnica:'Técnica',comunicacion:'Comunicación',autonomia:'Autonomía',liderazgo:'Liderazgo'};
+    body=`<div class="modal-title">Valorar · ${d.name} <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9ca3af;line-height:1">×</button></div>
+      ${dims.map(k=>`<div class="field"><label>${dL[k]}</label>
+        <div class="eval-stars">${[1,2,3,4,5].map(i=>`<span class="star${(window._evalTmp[k]||0)>=i?' on':''}" data-dim="${k}" data-v="${i}" onclick="setStar('${k}',${i})">★</span>`).join('')}</div>
+      </div>`).join('')}
+      <div class="modal-actions"><button class="btn-sec" onclick="closeModal()">Cancelar</button><button class="btn-primary" onclick="saveEval('${id}')">Guardar</button></div>`;
+  }
+  root.innerHTML=`<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal">${body}</div></div>`;
+}
+async function saveDev(id){
+  const name=document.getElementById('m-name').value.trim();
+  const role=document.getElementById('m-role').value.trim();
+  const skills=document.getElementById('m-skills').value.split(',').map(s=>s.trim()).filter(Boolean);
+  if(!name){alert('El nombre es obligatorio');return;}
+  closeModal();setSyncStatus('Guardando...');
+  try{
+    if(id){const d=state.devs.find(x=>x.id===id);if(d){d.name=name;d.role=role;d.skills=skills;await saveDevRow(d);}}
+    else{const dev={id:'dev_'+Date.now(),name,role,color:state.devs.length%COLORS.length,skills,notas:'',eval:{tecnica:0,comunicacion:0,autonomia:0,liderazgo:0}};state.devs.push(dev);await saveDevRow(dev);}
+    showToast(id?'Actualizado':'Añadido');renderSidebar();refresh();
+  }catch(e){showToast('Error');console.error(e);}
+  setSyncStatus('');
+}
+async function deleteDev(id){
+  closeModal();setSyncStatus('Eliminando...');
+  try{await deleteDevRow(id);state.devs=state.devs.filter(d=>d.id!==id);showToast('Eliminado');renderSidebar();showSection('dashboard');}
+  catch(e){showToast('Error');console.error(e);}
+  setSyncStatus('');
+}
+async function saveHito(){
+  const devId=document.getElementById('m-dev').value;
+  const texto=document.getElementById('m-texto').value.trim();
+  if(!texto){alert('La descripción es obligatoria');return;}
+  const h={id:'h_'+Date.now(),devId,texto,tipo:document.getElementById('m-tipo').value,fecha:document.getElementById('m-fecha').value.trim()||'2025',manager:document.getElementById('m-manager').value.trim()};
+  closeModal();setSyncStatus('Guardando...');
+  try{state.hitos.push(h);await saveHitoRow(h);showToast('Hito añadido');refresh();}
+  catch(e){showToast('Error');console.error(e);}
+  setSyncStatus('');
+}
+async function saveProyecto(){
+  const nombre=document.getElementById('m-pnombre').value.trim();
+  if(!nombre){alert('El nombre es obligatorio');return;}
+  const p={id:'p_'+Date.now(),nombre,descripcion:document.getElementById('m-pdesc').value.trim(),fechaInicio:document.getElementById('m-pinicio').value.trim(),fechaFin:document.getElementById('m-pfin').value.trim(),estado:document.getElementById('m-pestado').value,devIds:state.devs.filter(d=>document.getElementById('pdev-'+d.id)?.checked).map(d=>d.id),notas:document.getElementById('m-pnotas').value.trim()};
+  closeModal();setSyncStatus('Guardando...');
+  try{state.proyectos.push(p);await saveProyectoRow(p);showToast('Proyecto guardado');renderProyectos();}
+  catch(e){showToast('Error');console.error(e);}
+  setSyncStatus('');
+}
+async function saveEval(devId){
+  const d=state.devs.find(x=>x.id===devId);
+  if(!d)return;
+  d.eval={...window._evalTmp};
+  closeModal();setSyncStatus('Guardando...');
+  try{await saveDevRow(d);showToast('Valoración guardada');renderEval();}
+  catch(e){showToast('Error');console.error(e);}
+  setSyncStatus('');
+}
+
+// ── Init ───────────────────────────────────────
+function init(){
+  const cfg=getConfig();
+  if(!cfg||!cfg.sheetId||!cfg.email||!cfg.key){
+    document.getElementById('config-screen').style.display='block';
+    document.getElementById('app').style.display='none';
+  } else {
+    document.getElementById('config-screen').style.display='none';
+    document.getElementById('app').style.display='flex';
+    loadAll();
+  }
+}
+init();
+</script>
+</body>
+</html>
