@@ -106,6 +106,19 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .icon-btn:hover{background:#eef4f3;color:var(--teal-dark)}
 .meta-line{font-size:11px;color:var(--muted);margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .meta-tag{background:#f4f6f7;border-radius:6px;padding:2px 8px}
+/* Multi-select buscable (desarrolladores en proyecto) */
+.ms-box{border:1px solid var(--border);border-radius:8px;padding:6px;background:#fff}
+.ms-box:focus-within{border-color:var(--teal)}
+.ms-chips{display:flex;flex-wrap:wrap;gap:5px}
+.ms-chips:not(:empty){margin-bottom:6px}
+.ms-chip{display:flex;align-items:center;gap:5px;background:#e3f1ef;color:var(--teal-dark);border-radius:100px;padding:3px 5px 3px 9px;font-size:12px;font-weight:600}
+.ms-chip button{background:none;border:none;cursor:pointer;color:var(--teal-dark);font-size:14px;line-height:1;padding:0 2px}
+.ms-chip button:hover{color:var(--red)}
+.ms-search{width:100%;border:none;outline:none;font-size:13px;padding:5px 4px;font-family:inherit;background:transparent;color:var(--dark)}
+.ms-options{max-height:180px;overflow-y:auto;border-top:1px solid var(--border);margin-top:6px;padding-top:4px}
+.ms-opt{padding:7px 8px;font-size:13px;cursor:pointer;border-radius:6px;display:flex;align-items:center;gap:8px}
+.ms-opt:hover{background:#eef4f3}
+.ms-empty{padding:8px;font-size:12px;color:var(--muted)}
 /* User picker big buttons */
 .user-pick{display:flex;flex-direction:column;gap:10px;margin-top:6px}
 .user-pick button{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;font-size:14px;font-weight:600;color:var(--dark);transition:all .1s}
@@ -228,6 +241,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 <script>
 // ── Responsables (login básico) ────────────────
 const RESPONSABLES=['Roberto','Nacho','Agustín'];
+// Categorías de rol (se puede elegir de la lista o escribir libre)
+const ROLES=[
+  'SA – Skill Acquisition',
+  'SA(S) – Senior Skill Acquisition',
+  'SM – Skill Mastery',
+  'SM(S) – Senior Skill Mastery',
+  'SL – Skill Leadership',
+  'SC – Strategic Contribution',
+  'SC(S) – Senior Strategic Contribution',
+  'EL – Executive Leadership'
+];
 function getUser(){ return localStorage.getItem('tm_user')||''; }
 function setUser(name){ localStorage.setItem('tm_user',name); }
 function currentUser(){ return getUser()||'—'; }
@@ -696,7 +720,7 @@ async function saveProyecto(id){
     fechaInicio:document.getElementById('m-pinicio').value.trim(),
     fechaFin:document.getElementById('m-pfin').value.trim(),
     estado:document.getElementById('m-pestado').value,
-    devIds:state.devs.filter(d=>document.getElementById('pdev-'+d.id)?.checked).map(d=>d.id),
+    devIds:[...window._projDevs],
     notas:document.getElementById('m-pnotas').value.trim()
   };
   closeModal();setSyncStatus('Guardando...');
@@ -724,6 +748,27 @@ async function saveEval(devId){
   setSyncStatus('');
 }
 
+// ── Selector buscable de desarrolladores (proyectos) ──
+window._projDevs=new Set();
+function renderProjChips(){
+  const el=document.getElementById('pdev-chips');
+  const cnt=document.getElementById('pdev-count');
+  if(!el)return;
+  const ids=[...window._projDevs];
+  if(cnt)cnt.textContent=ids.length;
+  el.innerHTML=ids.map(id=>{const d=state.devs.find(x=>x.id===id);if(!d)return'';return `<span class="ms-chip">${esc(d.name)}<button onclick="removeProjDev('${id}')" title="Quitar">×</button></span>`;}).join('');
+}
+function filterProjDevs(){
+  const q=(document.getElementById('pdev-search')?.value||'').toLowerCase().trim();
+  const opts=document.getElementById('pdev-options');
+  if(!opts)return;
+  const list=state.devs.filter(d=>!window._projDevs.has(d.id)&&(!q||d.name.toLowerCase().includes(q)||(d.role||'').toLowerCase().includes(q)));
+  if(!list.length){opts.innerHTML='<div class="ms-empty">'+(q?'Sin resultados':'Todos añadidos')+'</div>';return;}
+  opts.innerHTML=list.slice(0,50).map(d=>{const c=colorOf(d.color);return `<div class="ms-opt" onclick="addProjDev('${d.id}')"><div class="avatar" style="background:${c.bg};color:${c.text};width:22px;height:22px;font-size:9px">${initials(d.name)}</div><span>${esc(d.name)}</span>${d.role?`<span style="color:var(--muted);font-size:11px;margin-left:auto">${esc(d.role)}</span>`:''}</div>`;}).join('');
+}
+function addProjDev(id){window._projDevs.add(id);const s=document.getElementById('pdev-search');if(s)s.value='';renderProjChips();filterProjDevs();document.getElementById('pdev-search')?.focus();}
+function removeProjDev(id){window._projDevs.delete(id);renderProjChips();filterProjDevs();}
+
 // ── Modal builder ──────────────────────────────
 function closeModal(){document.getElementById('modal-root').innerHTML='';}
 function openModal(type,id){
@@ -735,7 +780,11 @@ function openModal(type,id){
     body=`<div class="modal-title">Nuevo desarrollador <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9ca3af;line-height:1">×</button></div>
       <div class="reg-box">👤 Se creará como: <b>${esc(currentUser())}</b></div>
       <div class="field"><label>Nombre completo</label><input id="m-name"/></div>
-      <div class="field"><label>Rol / Puesto</label><input id="m-role"/></div>
+      <div class="field"><label>Rol / Categoría</label>
+        <input id="m-role" list="roles-list" placeholder="Elige una categoría o escribe..."/>
+        <datalist id="roles-list">${ROLES.map(r=>`<option value="${esc(r)}"></option>`).join('')}</datalist>
+        <div class="field-note">Elige de la lista o escribe un rol personalizado.</div>
+      </div>
       <div class="field"><label>Skills (separadas por coma)</label><input id="m-skills"/></div>
       <div class="modal-actions"><button class="btn-sec" onclick="closeModal()">Cancelar</button><button class="btn-primary" onclick="saveDev()">Guardar</button></div>`;
   } else if(type==='editdev'){
@@ -743,7 +792,11 @@ function openModal(type,id){
     body=`<div class="modal-title">Editar · ${esc(d.name)} <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9ca3af;line-height:1">×</button></div>
       <div class="reg-box">✏️ Editando como: <b>${esc(currentUser())}</b></div>
       <div class="field"><label>Nombre</label><input id="m-name" value="${esc(d.name)}"/></div>
-      <div class="field"><label>Rol</label><input id="m-role" value="${esc(d.role)}"/></div>
+      <div class="field"><label>Rol / Categoría</label>
+        <input id="m-role" list="roles-list" value="${esc(d.role)}" placeholder="Elige una categoría o escribe..."/>
+        <datalist id="roles-list">${ROLES.map(r=>`<option value="${esc(r)}"></option>`).join('')}</datalist>
+        <div class="field-note">Elige de la lista o escribe un rol personalizado.</div>
+      </div>
       <div class="field"><label>Skills</label><input id="m-skills" value="${esc((d.skills||[]).join(', '))}"/></div>
       <div class="modal-actions">
         <button class="btn-danger" onclick="if(confirm('¿Eliminar?'))deleteDev('${id}')">Eliminar</button>
@@ -769,9 +822,9 @@ function openModal(type,id){
       <div class="modal-actions">${editing?`<button class="btn-danger" onclick="closeModal();deleteHito('${id}')">Eliminar</button>`:''}<button class="btn-sec" onclick="closeModal()">Cancelar</button><button class="btn-primary" onclick="saveHito(${editing?`'${id}'`:''})">${editing?'Guardar':'Añadir'}</button></div>`;
   } else if(type==='proyecto'){
     const p=id?state.proyectos.find(x=>x.id===id):null;
+    window._projDevs=new Set(p?p.devIds.filter(id2=>state.devs.some(d=>d.id===id2)):[]);
     const estados=[['activo','Activo'],['completado','Completado'],['pausado','Pausado']];
     const estOpts=estados.map(e=>`<option value="${e[0]}"${p&&p.estado===e[0]?' selected':''}>${e[1]}</option>`).join('');
-    const checks=state.devs.map(d=>`<label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer"><input type="checkbox" id="pdev-${d.id}"${p&&p.devIds.includes(d.id)?' checked':''}> ${esc(d.name)}</label>`).join('');
     body=`<div class="modal-title">${p?'Editar proyecto':'Nuevo proyecto'} <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9ca3af;line-height:1">×</button></div>
       <div class="reg-box">${p?'✏️ Editando':'👤 Se creará'} como: <b>${esc(currentUser())}</b></div>
       <div class="field"><label>Nombre</label><input id="m-pnombre" value="${p?esc(p.nombre):''}"/></div>
@@ -781,7 +834,13 @@ function openModal(type,id){
         <div class="field"><label>Fin</label><input id="m-pfin" placeholder="Jun 2026" value="${p?esc(p.fechaFin):''}"/></div>
       </div>
       <div class="field"><label>Estado</label><select id="m-pestado">${estOpts}</select></div>
-      <div class="field"><label>Desarrolladores</label><div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:4px">${checks||'<span style="font-size:12px;color:var(--muted)">Añade personas primero</span>'}</div></div>
+      <div class="field"><label>Desarrolladores (<span id="pdev-count">0</span>)</label>
+        ${state.devs.length?`<div class="ms-box">
+          <div id="pdev-chips" class="ms-chips"></div>
+          <input id="pdev-search" class="ms-search" placeholder="Buscar por nombre o rol y añadir..." oninput="filterProjDevs()" onfocus="filterProjDevs()"/>
+          <div id="pdev-options" class="ms-options"></div>
+        </div>`:'<span style="font-size:12px;color:var(--muted)">Añade personas primero</span>'}
+      </div>
       <div class="field"><label>Notas</label><textarea id="m-pnotas" style="min-height:50px">${p?esc(p.notas):''}</textarea></div>
       <div class="modal-actions">${p?`<button class="btn-danger" onclick="if(confirm('¿Eliminar proyecto?'))deleteProyecto('${id}')">Eliminar</button>`:''}<button class="btn-sec" onclick="closeModal()">Cancelar</button><button class="btn-primary" onclick="saveProyecto(${p?`'${id}'`:''})">Guardar</button></div>`;
   } else if(type==='evaluar'){
@@ -797,6 +856,7 @@ function openModal(type,id){
       <div class="modal-actions"><button class="btn-sec" onclick="closeModal()">Cancelar</button><button class="btn-primary" onclick="saveEval('${id}')">Guardar</button></div>`;
   }
   root.innerHTML=`<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal">${body}</div></div>`;
+  if(type==='proyecto'&&state.devs.length){renderProjChips();filterProjDevs();}
 }
 async function deleteProyecto(id){
   closeModal();setSyncStatus('Eliminando...');
