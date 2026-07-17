@@ -361,6 +361,28 @@ const showToast=msg=>{const t=document.getElementById('toast');t.textContent=msg
 const setSyncStatus=msg=>{const el=document.getElementById('sync-status');if(el)el.textContent=msg};
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const today=()=>new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
+// ── Fechas mes+año ─────────────────────────────
+const MESES=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+const MESES_MAP={ene:'01',feb:'02',mar:'03',abr:'04',may:'05',jun:'06',jul:'07',ago:'08',sep:'09',set:'09',oct:'10',nov:'11',dic:'12'};
+function currentMonth(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0');}
+// Convierte un valor guardado a "YYYY-MM" para el input type=month (admite formatos antiguos)
+function toMonthInput(val){
+  if(!val)return'';
+  val=String(val).trim();
+  if(/^\d{4}-\d{2}$/.test(val))return val;                 // ya es YYYY-MM
+  let m=val.match(/([A-Za-zÁÉÍÓÚáéíóú]+)\.?\s+(\d{4})/);    // "Mar 2026" / "Marzo 2026"
+  if(m){const key=m[1].toLowerCase().slice(0,3).replace('á','a').replace('é','e').replace('í','i').replace('ó','o').replace('ú','u');if(MESES_MAP[key])return m[2]+'-'+MESES_MAP[key];}
+  m=val.match(/^(\d{4})$/);                                 // solo "2026" → enero
+  if(m)return m[1]+'-01';
+  return'';
+}
+// Convierte un valor guardado a texto legible "Mar 2026"
+function fmtMonth(val){
+  if(!val)return'';
+  const iso=toMonthInput(val);
+  if(iso){const[y,m]=iso.split('-');return MESES[parseInt(m,10)-1]+' '+y;}
+  return String(val); // formato libre no reconocido: se muestra tal cual
+}
 
 // ── Load / Save ────────────────────────────────
 async function initSheets(){
@@ -485,7 +507,7 @@ function renderDashboard(){
     const dev=devs.find(d=>d.id===h.devId);
     return `<div class="hito-item"><div class="hito-icon" style="background:${bgMap[h.tipo]||bgMap.otro}">${icMap[h.tipo]||icMap.otro}</div>
       <div style="flex:1"><div class="hito-text">${esc(h.texto)}</div>
-      <div class="hito-date">${esc(dev?.name||'?')} · ${esc(h.fecha)}${h.registradoPor?' · por '+esc(h.registradoPor):''}</div></div>
+      <div class="hito-date">${esc(dev?.name||'?')} · ${esc(fmtMonth(h.fecha))}${h.registradoPor?' · por '+esc(h.registradoPor):''}</div></div>
       <button class="icon-btn" onclick="openModal('hito','${h.id}')" title="Editar">✏️</button></div>`;
   }).join('');
 }
@@ -500,7 +522,7 @@ function renderProyectos(){
     return `<div class="card">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">
         <div><div style="font-size:14px;font-weight:700">${esc(p.nombre)}</div>
-          <div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(p.fechaInicio)}${p.fechaFin?' → '+esc(p.fechaFin):' · en curso'}</div></div>
+          <div style="font-size:11px;color:var(--muted);margin-top:2px">${esc(fmtMonth(p.fechaInicio))}${p.fechaFin?' → '+esc(fmtMonth(p.fechaFin)):' · en curso'}</div></div>
         <div style="display:flex;align-items:center;gap:6px">
           <span class="tag badge-${p.estado}">${esc(p.estado)}</span>
           <button class="icon-btn" onclick="openModal('proyecto','${p.id}')" title="Editar">✏️</button>
@@ -538,7 +560,7 @@ function renderEval(){
           <div style="display:flex;gap:2px">${[1,2,3,4,5].map(i=>`<div style="width:10px;height:10px;border-radius:2px;background:${(ev[k]||0)>=i?'var(--olive)':'#eef1f2'}"></div>`).join('')}</div>
         </div>`).join('')}
       </div>
-      ${logros.length?`<div style="font-size:11px;color:var(--muted);margin-bottom:6px">Logros</div>${logros.map(h=>`<div style="font-size:12px;padding:3px 0;border-bottom:1px solid #f1f4f5">${esc(h.texto)} <span style="color:var(--muted)">· ${esc(h.fecha)}</span></div>`).join('')}`:''}
+      ${logros.length?`<div style="font-size:11px;color:var(--muted);margin-bottom:6px">Logros</div>${logros.map(h=>`<div style="font-size:12px;padding:3px 0;border-bottom:1px solid #f1f4f5">${esc(h.texto)} <span style="color:var(--muted)">· ${esc(fmtMonth(h.fecha))}</span></div>`).join('')}`:''}
       ${d.notas?`<div style="margin-top:10px;font-size:12px;background:#f4f6f7;padding:8px 10px;border-radius:8px;color:#6b7280">${esc(d.notas)}</div>`:''}
       ${d.evaluadoPor?`<div class="meta-line"><span class="meta-tag">Última valoración por ${esc(d.evaluadoPor)}</span></div>`:''}
       <div style="display:flex;gap:8px;margin-top:12px">
@@ -598,7 +620,7 @@ function renderDevDetail(){
       ${hitos.map(h=>`<div class="hito-item">
         <div class="hito-icon" style="background:${bgMap[h.tipo]||bgMap.otro}">${icMap[h.tipo]||icMap.otro}</div>
         <div style="flex:1"><div class="hito-text">${esc(h.texto)}</div>
-          <div class="hito-date">${esc(h.fecha)}${h.registradoPor?' · por '+esc(h.registradoPor):''}</div></div>
+          <div class="hito-date">${esc(fmtMonth(h.fecha))}${h.registradoPor?' · por '+esc(h.registradoPor):''}</div></div>
         <button class="icon-btn" onclick="openModal('hito','${h.id}')" title="Editar">✏️</button>
         <button class="icon-btn" onclick="deleteHito('${h.id}')" title="Eliminar" style="color:#e3a3a3">✕</button>
       </div>`).join('')}
@@ -608,7 +630,7 @@ function renderDevDetail(){
       ${proyectos.map(p=>`<div class="proj-row">
         <div class="proj-dot" style="background:${p.estado==='activo'?'var(--green)':p.estado==='completado'?'var(--teal-dark)':'var(--lav)'}"></div>
         <div><div style="font-size:13px;font-weight:600">${esc(p.nombre)}</div>
-          <div style="font-size:11px;color:var(--muted)">${esc(p.fechaInicio)}${p.fechaFin?' → '+esc(p.fechaFin):''} · ${esc(p.estado)}</div></div>
+          <div style="font-size:11px;color:var(--muted)">${esc(fmtMonth(p.fechaInicio))}${p.fechaFin?' → '+esc(fmtMonth(p.fechaFin)):''} · ${esc(p.estado)}</div></div>
       </div>`).join('')}</div>`:''}`;
 }
 
@@ -697,7 +719,7 @@ async function saveHito(id){
   const texto=document.getElementById('m-texto').value.trim();
   if(!texto){alert('La descripción es obligatoria');return;}
   const tipo=document.getElementById('m-tipo').value;
-  const fecha=document.getElementById('m-fecha').value.trim()||'2026';
+  const fecha=document.getElementById('m-fecha').value||currentMonth();
   closeModal();setSyncStatus('Guardando...');
   try{
     if(id){
@@ -817,7 +839,7 @@ function openModal(type,id){
       <div class="field"><label>Descripción</label><textarea id="m-texto" placeholder="Qué ocurrió o se logró...">${h?esc(h.texto):''}</textarea></div>
       <div class="row-flex">
         <div class="field"><label>Tipo</label><select id="m-tipo">${tipoOpts}</select></div>
-        <div class="field"><label>Fecha</label><input id="m-fecha" placeholder="Mar 2026" value="${h?esc(h.fecha):''}"/></div>
+        <div class="field"><label>Fecha (mes)</label><input type="month" id="m-fecha" value="${h?toMonthInput(h.fecha):currentMonth()}"/></div>
       </div>
       <div class="modal-actions">${editing?`<button class="btn-danger" onclick="closeModal();deleteHito('${id}')">Eliminar</button>`:''}<button class="btn-sec" onclick="closeModal()">Cancelar</button><button class="btn-primary" onclick="saveHito(${editing?`'${id}'`:''})">${editing?'Guardar':'Añadir'}</button></div>`;
   } else if(type==='proyecto'){
@@ -830,8 +852,8 @@ function openModal(type,id){
       <div class="field"><label>Nombre</label><input id="m-pnombre" value="${p?esc(p.nombre):''}"/></div>
       <div class="field"><label>Descripción</label><textarea id="m-pdesc" style="min-height:50px">${p?esc(p.descripcion):''}</textarea></div>
       <div class="row-flex">
-        <div class="field"><label>Inicio</label><input id="m-pinicio" placeholder="Ene 2026" value="${p?esc(p.fechaInicio):''}"/></div>
-        <div class="field"><label>Fin</label><input id="m-pfin" placeholder="Jun 2026" value="${p?esc(p.fechaFin):''}"/></div>
+        <div class="field"><label>Inicio (mes)</label><input type="month" id="m-pinicio" value="${p?toMonthInput(p.fechaInicio):''}"/></div>
+        <div class="field"><label>Fin (mes, opcional)</label><input type="month" id="m-pfin" value="${p?toMonthInput(p.fechaFin):''}"/></div>
       </div>
       <div class="field"><label>Estado</label><select id="m-pestado">${estOpts}</select></div>
       <div class="field"><label>Desarrolladores (<span id="pdev-count">0</span>)</label>
