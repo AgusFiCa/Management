@@ -115,10 +115,25 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .ms-chip button{background:none;border:none;cursor:pointer;color:var(--teal-dark);font-size:14px;line-height:1;padding:0 2px}
 .ms-chip button:hover{color:var(--red)}
 .ms-search{width:100%;border:none;outline:none;font-size:13px;padding:5px 4px;font-family:inherit;background:transparent;color:var(--dark)}
-.ms-options{max-height:180px;overflow-y:auto;border-top:1px solid var(--border);margin-top:6px;padding-top:4px}
+.ms-options{display:none;max-height:180px;overflow-y:auto;border-top:1px solid var(--border);margin-top:6px;padding-top:4px}
+.ms-box.open .ms-options{display:block}
 .ms-opt{padding:7px 8px;font-size:13px;cursor:pointer;border-radius:6px;display:flex;align-items:center;gap:8px}
 .ms-opt:hover{background:#eef4f3}
 .ms-empty{padding:8px;font-size:12px;color:var(--muted)}
+/* Equipo */
+.eq-toolbar{display:flex;gap:10px;align-items:center;margin-bottom:16px;flex-wrap:wrap}
+.eq-search{flex:1;min-width:200px;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;outline:none;background:#fff;font-family:inherit;color:var(--dark)}
+.eq-search:focus{border-color:var(--teal)}
+.eq-select{padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-size:13px;background:#fff;color:var(--dark);outline:none;max-width:280px}
+.eq-count{font-size:12px;color:var(--muted);white-space:nowrap}
+.eq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.eq-card{background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;cursor:pointer;transition:all .1s}
+.eq-card:hover{border-color:var(--teal);box-shadow:0 2px 10px rgba(36,139,126,0.10)}
+.eq-head{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.eq-name{font-size:14px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eq-role{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.eq-pct{font-size:18px;font-weight:700;color:var(--teal-dark)}
+.eq-stats{display:flex;gap:12px;font-size:11px;color:#6b7280;margin:10px 0 12px}
 /* User picker big buttons */
 .user-pick{display:flex;flex-direction:column;gap:10px;margin-top:6px}
 .user-pick button{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:10px;background:#fff;cursor:pointer;font-size:14px;font-weight:600;color:var(--dark);transition:all .1s}
@@ -185,18 +200,12 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
         Proyectos
       </button>
-      <button class="nav-item" onclick="showSection('evaluaciones')" id="nav-evaluaciones">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
-        Evaluaciones
+      <button class="nav-item" onclick="showSection('equipo')" id="nav-equipo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87"/><path d="M16 3.13a4 4 0 010 7.75"/></svg>
+        Equipo
       </button>
     </div>
     <div class="sidebar-bottom">
-      <div class="nav-label" style="padding:4px 8px 8px">Desarrolladores</div>
-      <div id="dev-list-sidebar"></div>
-      <button class="nav-item" onclick="openModal('dev')" style="color:var(--muted);font-size:12px;margin-top:4px">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Añadir persona
-      </button>
       <button class="nav-item" onclick="resetConfig()" style="color:var(--muted);font-size:11px;margin-top:2px">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.07 4.93a10 10 0 010 14.14"/><path d="M4.93 4.93a10 10 0 000 14.14"/></svg>
         Cambiar credenciales
@@ -229,7 +238,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
         <div id="hitos-recientes"></div>
       </div>
       <div class="section" id="sec-proyectos"><div id="proyectos-list"></div></div>
-      <div class="section" id="sec-evaluaciones"><div id="eval-content"></div></div>
+      <div class="section" id="sec-equipo">
+        <div class="eq-toolbar">
+          <input id="eq-search" class="eq-search" placeholder="Buscar por nombre, rol o skill..." oninput="renderEquipo()" autocomplete="off"/>
+          <select id="eq-role" class="eq-select" onchange="renderEquipo()"><option value="">Todos los roles</option></select>
+          <span class="eq-count" id="eq-count"></span>
+        </div>
+        <div id="eq-list" class="eq-grid"></div>
+      </div>
       <div class="section" id="sec-dev"><div id="dev-detail"></div></div>
     </div>
   </div>
@@ -388,20 +404,27 @@ function fmtMonth(val){
 async function initSheets(){
   try{
     await sheetsUpdate(`${TAB_DEVS}!A1:M1`,[['id','nombre','rol','color','skills','notas','tecnica','comunicacion','autonomia','liderazgo','creadoPor','actualizadoPor','evaluadoPor']]);
-    await sheetsUpdate(`${TAB_HITOS}!A1:F1`,[['id','devId','texto','tipo','fecha','registradoPor']]);
+    await sheetsUpdate(`${TAB_HITOS}!A1:G1`,[['id','devIds','texto','tipo','fecha','registradoPor','proyectoIds']]);
     await sheetsUpdate(`${TAB_PROYECTOS}!A1:J1`,[['id','nombre','descripcion','fechaInicio','fechaFin','estado','devIds','notas','creadoPor','actualizadoPor']]);
   }catch(e){console.warn('initSheets:',e);}
+}
+async function ensureHeaders(){
+  try{
+    await sheetsUpdate(`${TAB_DEVS}!A1:M1`,[['id','nombre','rol','color','skills','notas','tecnica','comunicacion','autonomia','liderazgo','creadoPor','actualizadoPor','evaluadoPor']]);
+    await sheetsUpdate(`${TAB_HITOS}!A1:G1`,[['id','devIds','texto','tipo','fecha','registradoPor','proyectoIds']]);
+    await sheetsUpdate(`${TAB_PROYECTOS}!A1:J1`,[['id','nombre','descripcion','fechaInicio','fechaFin','estado','devIds','notas','creadoPor','actualizadoPor']]);
+  }catch(e){console.warn('ensureHeaders:',e);}
 }
 async function loadAll(){
   setSyncStatus('Cargando...');
   try{
-    const [dR,hR,pR]=await Promise.all([sheetsGet(`${TAB_DEVS}!A2:M500`),sheetsGet(`${TAB_HITOS}!A2:F500`),sheetsGet(`${TAB_PROYECTOS}!A2:J500`)]);
+    const [dR,hR,pR]=await Promise.all([sheetsGet(`${TAB_DEVS}!A2:M500`),sheetsGet(`${TAB_HITOS}!A2:G500`),sheetsGet(`${TAB_PROYECTOS}!A2:J500`)]);
     state.devs=dR.filter(r=>r[0]).map(r=>({id:r[0],name:r[1]||'',role:r[2]||'',color:parseInt(r[3]||0),skills:(r[4]||'').split('|').filter(Boolean),notas:r[5]||'',eval:{tecnica:+r[6]||0,comunicacion:+r[7]||0,autonomia:+r[8]||0,liderazgo:+r[9]||0},creadoPor:r[10]||'',actualizadoPor:r[11]||'',evaluadoPor:r[12]||''}));
-    state.hitos=hR.filter(r=>r[0]).map(r=>({id:r[0],devId:r[1]||'',texto:r[2]||'',tipo:r[3]||'otro',fecha:r[4]||'',registradoPor:r[5]||''}));
+    state.hitos=hR.filter(r=>r[0]).map(r=>({id:r[0],devIds:(r[1]||'').split('|').filter(Boolean),texto:r[2]||'',tipo:r[3]||'otro',fecha:r[4]||'',registradoPor:r[5]||'',proyectoIds:(r[6]||'').split('|').filter(Boolean)}));
     state.proyectos=pR.filter(r=>r[0]).map(r=>({id:r[0],nombre:r[1]||'',descripcion:r[2]||'',fechaInicio:r[3]||'',fechaFin:r[4]||'',estado:r[5]||'activo',devIds:(r[6]||'').split('|').filter(Boolean),notas:r[7]||'',creadoPor:r[8]||'',actualizadoPor:r[9]||''}));
     setSyncStatus('Sincronizado');
     setTimeout(()=>setSyncStatus(''),2000);
-    renderSidebar();refresh();
+    refresh();
   }catch(e){
     setSyncStatus('Error al cargar');console.error(e);
     if(String(e).includes('Unable to parse range')){await initSheets();await loadAll();}
@@ -422,14 +445,14 @@ async function deleteDevRow(id){
 async function saveHitoRow(h){
   const rows=await sheetsGet(`${TAB_HITOS}!A2:A500`);
   const i=rows.findIndex(r=>r[0]===h.id);
-  const vals=[[h.id,h.devId,h.texto,h.tipo,h.fecha,h.registradoPor||'']];
-  if(i>=0)await sheetsUpdate(`${TAB_HITOS}!A${i+2}:F${i+2}`,vals);
-  else await sheetsAppend(`${TAB_HITOS}!A:F`,vals);
+  const vals=[[h.id,(h.devIds||[]).join('|'),h.texto,h.tipo,h.fecha,h.registradoPor||'',(h.proyectoIds||[]).join('|')]];
+  if(i>=0)await sheetsUpdate(`${TAB_HITOS}!A${i+2}:G${i+2}`,vals);
+  else await sheetsAppend(`${TAB_HITOS}!A:G`,vals);
 }
 async function deleteHitoRow(id){
   const rows=await sheetsGet(`${TAB_HITOS}!A2:A500`);
   const i=rows.findIndex(r=>r[0]===id);
-  if(i>=0)await sheetsUpdate(`${TAB_HITOS}!A${i+2}:F${i+2}`,[['','','','','','']]);
+  if(i>=0)await sheetsUpdate(`${TAB_HITOS}!A${i+2}:G${i+2}`,[['','','','','','','']]);
 }
 async function saveProyectoRow(p){
   const rows=await sheetsGet(`${TAB_PROYECTOS}!A2:A500`);
@@ -449,19 +472,18 @@ function refresh(){
   const s=state.currentSection;
   if(s==='dashboard')renderDashboard();
   else if(s==='proyectos')renderProyectos();
-  else if(s==='evaluaciones')renderEval();
+  else if(s==='equipo')renderEquipo();
   else if(s==='dev')renderDevDetail();
 }
 function showSection(sec,devId){
   document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
   document.querySelectorAll('.nav-item[id^=nav-]').forEach(n=>n.classList.remove('active'));
-  document.querySelectorAll('.dev-pill').forEach(p=>p.classList.remove('active'));
   state.currentSection=sec;
   const topActions=()=>`<span id="sync-status" style="font-size:11px;color:var(--muted)"></span><button class="btn-sec" onclick="loadAll()" style="font-size:12px">↻ Sincronizar</button>`;
   if(sec==='dev'&&devId){
     state.currentDev=devId;
     document.getElementById('sec-dev').classList.add('active');
-    document.getElementById('dpill-'+devId)?.classList.add('active');
+    document.getElementById('nav-equipo')?.classList.add('active');
     const d=state.devs.find(x=>x.id===devId);
     document.getElementById('page-title').textContent=d?.name||'';
     document.getElementById('page-sub').textContent=d?.role||'';
@@ -470,27 +492,18 @@ function showSection(sec,devId){
   } else {
     document.getElementById('sec-'+sec)?.classList.add('active');
     document.getElementById('nav-'+sec)?.classList.add('active');
-    const titles={dashboard:['Dashboard','Resumen del equipo'],proyectos:['Proyectos','Todos los proyectos'],evaluaciones:['Evaluaciones','Resumen anual por persona']};
+    const titles={dashboard:['Dashboard','Resumen del equipo'],proyectos:['Proyectos','Todos los proyectos'],equipo:['Equipo','Personas y valoraciones']};
     const t=titles[sec]||[sec,''];
     document.getElementById('page-title').textContent=t[0];
     document.getElementById('page-sub').textContent=t[1];
     const extra={
       dashboard:`<button class="btn-primary" onclick="openModal('hito')">+ Añadir hito</button>`,
       proyectos:`<button class="btn-primary" onclick="openModal('proyecto')">+ Nuevo proyecto</button>`,
-      evaluaciones:''
+      equipo:`<button class="btn-primary" onclick="openModal('dev')">+ Añadir persona</button>`
     };
     document.getElementById('topbar-actions').innerHTML=topActions()+(extra[sec]||'');
     refresh();
   }
-}
-function renderSidebar(){
-  document.getElementById('dev-list-sidebar').innerHTML=state.devs.map(d=>{
-    const c=colorOf(d.color);
-    return `<button class="dev-pill" id="dpill-${d.id}" onclick="showSection('dev','${d.id}')">
-      <div class="avatar" style="background:${c.bg};color:${c.text}">${initials(d.name)}</div>
-      <span>${esc(d.name.split(' ')[0])}</span></button>`;
-  }).join('');
-  if(state.currentSection==='dev'&&state.currentDev) document.getElementById('dpill-'+state.currentDev)?.classList.add('active');
 }
 function renderDashboard(){
   const devs=state.devs,hitos=state.hitos,proyectos=state.proyectos;
@@ -504,10 +517,9 @@ function renderDashboard(){
   const el=document.getElementById('hitos-recientes');
   if(!recent.length){el.innerHTML='<div class="empty">Sin hitos registrados aún.</div>';return;}
   el.innerHTML=recent.map(h=>{
-    const dev=devs.find(d=>d.id===h.devId);
     return `<div class="hito-item"><div class="hito-icon" style="background:${bgMap[h.tipo]||bgMap.otro}">${icMap[h.tipo]||icMap.otro}</div>
       <div style="flex:1"><div class="hito-text">${esc(h.texto)}</div>
-      <div class="hito-date">${esc(dev?.name||'?')} · ${esc(fmtMonth(h.fecha))}${h.registradoPor?' · por '+esc(h.registradoPor):''}</div></div>
+      <div class="hito-date">${esc(hitoDevNames(h).join(', ')||'Sin personas')} · ${esc(fmtMonth(h.fecha))}${h.registradoPor?' · por '+esc(h.registradoPor):''}</div>${hitoProjTags(h)}</div>
       <button class="icon-btn" onclick="openModal('hito','${h.id}')" title="Editar">✏️</button></div>`;
   }).join('');
 }
@@ -519,6 +531,8 @@ function renderProyectos(){
     const meta=[];
     if(p.creadoPor)meta.push(`<span class="meta-tag">Creado por ${esc(p.creadoPor)}</span>`);
     if(p.actualizadoPor)meta.push(`<span class="meta-tag">Editado por ${esc(p.actualizadoPor)}</span>`);
+    const ph=state.hitos.filter(h=>(h.proyectoIds||[]).includes(p.id)).reverse();
+    const hitosHtml=ph.length?`<div style="margin-top:10px;border-top:1px solid #f1f4f5;padding-top:8px"><div style="font-size:11px;color:var(--muted);margin-bottom:4px">Hitos (${ph.length})</div>${ph.slice(0,3).map(h=>`<div style="font-size:12px;padding:2px 0;cursor:pointer" onclick="openModal('hito','${h.id}')">${HITO_ICON[h.tipo]||'📝'} ${esc(h.texto)} <span style="color:var(--muted)">· ${esc(fmtMonth(h.fecha))}</span></div>`).join('')}${ph.length>3?`<div style="font-size:11px;color:var(--muted);margin-top:2px">+${ph.length-3} más</div>`:''}</div>`:'';
     return `<div class="card">
       <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:8px">
         <div><div style="font-size:14px;font-weight:700">${esc(p.nombre)}</div>
@@ -534,39 +548,44 @@ function renderProyectos(){
         ${devs.map(d=>{const c=colorOf(d.color);return`<div class="avatar" style="background:${c.bg};color:${c.text};width:24px;height:24px;font-size:9px" title="${esc(d.name)}">${initials(d.name)}</div>`}).join('')||'<span style="font-size:11px;color:var(--muted)">—</span>'}
       </div>
       ${p.notas?`<div style="margin-top:10px;font-size:11px;color:#6b7280;background:#f4f6f7;padding:8px 10px;border-radius:8px">📝 ${esc(p.notas)}</div>`:''}
+      ${hitosHtml}
       ${meta.length?`<div class="meta-line">${meta.join('')}</div>`:''}
     </div>`;
   }).join('');
 }
-function renderEval(){
-  const el=document.getElementById('eval-content');
-  if(!state.devs.length){el.innerHTML='<div class="empty">Añade desarrolladores primero.</div>';return;}
+function renderEquipo(){
+  const list=document.getElementById('eq-list');
+  if(!list)return;
+  const sel=document.getElementById('eq-role');
+  const q=(document.getElementById('eq-search')?.value||'').toLowerCase().trim();
+  const cur=sel?sel.value:'';
+  const order=r=>{const i=ROLES.indexOf(r);return i<0?999:i;};
+  const present=[...new Set(state.devs.map(d=>d.role).filter(Boolean))].sort((a,b)=>order(a)-order(b)||a.localeCompare(b,'es'));
+  if(sel)sel.innerHTML='<option value="">Todos los roles</option>'+present.map(r=>`<option value="${esc(r)}"${r===cur?' selected':''}>${esc(r)}</option>`).join('');
+  const roleVal=sel?sel.value:'';
   const dims=['tecnica','comunicacion','autonomia','liderazgo'];
-  const dL={tecnica:'Técnica',comunicacion:'Comunicación',autonomia:'Autonomía',liderazgo:'Liderazgo'};
-  el.innerHTML=state.devs.map(d=>{
+  const filtered=state.devs
+    .filter(d=>(!roleVal||d.role===roleVal)&&(!q||d.name.toLowerCase().includes(q)||(d.role||'').toLowerCase().includes(q)||(d.skills||[]).some(k=>k.toLowerCase().includes(q))))
+    .sort((a,b)=>a.name.localeCompare(b.name,'es'));
+  const cnt=document.getElementById('eq-count');
+  if(cnt)cnt.textContent=filtered.length===state.devs.length?`${state.devs.length} personas`:`${filtered.length} de ${state.devs.length}`;
+  if(!state.devs.length){list.innerHTML='<div class="empty" style="grid-column:1/-1">Aún no hay personas. Usa «+ Añadir persona».</div>';return;}
+  if(!filtered.length){list.innerHTML='<div class="empty" style="grid-column:1/-1">Sin resultados.</div>';return;}
+  list.innerHTML=filtered.map(d=>{
     const c=colorOf(d.color);const ev=d.eval||{};
     const pct=Math.round(dims.reduce((a,k)=>a+(ev[k]||0),0)/(dims.length*5)*100);
-    const logros=state.hitos.filter(h=>h.devId===d.id&&h.tipo==='logro');
-    return `<div class="card">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+    const mine=state.hitos.filter(h=>(h.devIds||[]).includes(d.id));
+    const nLogros=mine.filter(h=>h.tipo==='logro').length;
+    const nProy=state.proyectos.filter(p=>p.devIds.includes(d.id)&&p.estado==='activo').length;
+    return `<div class="eq-card" onclick="showSection('dev','${d.id}')">
+      <div class="eq-head">
         <div class="avatar-lg" style="background:${c.bg};color:${c.text}">${initials(d.name)}</div>
-        <div style="flex:1"><div style="font-size:14px;font-weight:700">${esc(d.name)}</div><div style="font-size:12px;color:var(--muted)">${esc(d.role)}</div></div>
-        <div style="text-align:right"><div style="font-size:22px;font-weight:700;color:var(--teal-dark)">${pct}%</div><div style="font-size:10px;color:var(--muted)">valoración</div></div>
+        <div style="flex:1;min-width:0"><div class="eq-name">${esc(d.name)}</div><div class="eq-role">${esc(d.role||'Sin rol')}</div></div>
+        <div class="eq-pct" title="Valoración">${pct}%</div>
       </div>
-      <div style="height:4px;background:#eef1f2;border-radius:100px;margin-bottom:12px;overflow:hidden"><div style="height:100%;width:${pct}%;background:var(--green);border-radius:100px"></div></div>
-      <div class="eval-grid" style="margin-bottom:12px">
-        ${dims.map(k=>`<div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
-          <span style="font-size:11px;color:#6b7280">${dL[k]}</span>
-          <div style="display:flex;gap:2px">${[1,2,3,4,5].map(i=>`<div style="width:10px;height:10px;border-radius:2px;background:${(ev[k]||0)>=i?'var(--olive)':'#eef1f2'}"></div>`).join('')}</div>
-        </div>`).join('')}
-      </div>
-      ${logros.length?`<div style="font-size:11px;color:var(--muted);margin-bottom:6px">Logros</div>${logros.map(h=>`<div style="font-size:12px;padding:3px 0;border-bottom:1px solid #f1f4f5">${esc(h.texto)} <span style="color:var(--muted)">· ${esc(fmtMonth(h.fecha))}</span></div>`).join('')}`:''}
-      ${d.notas?`<div style="margin-top:10px;font-size:12px;background:#f4f6f7;padding:8px 10px;border-radius:8px;color:#6b7280">${esc(d.notas)}</div>`:''}
-      ${d.evaluadoPor?`<div class="meta-line"><span class="meta-tag">Última valoración por ${esc(d.evaluadoPor)}</span></div>`:''}
-      <div style="display:flex;gap:8px;margin-top:12px">
-        <button class="btn-sec" onclick="openModal('evaluar','${d.id}')" style="font-size:12px">✏️ Valoración</button>
-        <button class="btn-sec" onclick="showSection('dev','${d.id}')" style="font-size:12px">👤 Perfil</button>
-      </div>
+      <div class="progress-bar" style="flex:none"><div class="progress-fill" style="width:${pct}%"></div></div>
+      <div class="eq-stats"><span>🏆 ${nLogros} logros</span><span>📌 ${mine.length} hitos</span><span>📁 ${nProy} activos</span></div>
+      <button class="btn-sec" onclick="event.stopPropagation();openModal('evaluar','${d.id}')" style="font-size:12px">✏️ Valorar</button>
     </div>`;
   }).join('');
 }
@@ -574,7 +593,7 @@ function renderDevDetail(){
   const d=state.devs.find(x=>x.id===state.currentDev);
   if(!d){document.getElementById('dev-detail').innerHTML='<div class="empty">No encontrado.</div>';return;}
   const c=colorOf(d.color);
-  const hitos=state.hitos.filter(h=>h.devId===d.id);
+  const hitos=state.hitos.filter(h=>(h.devIds||[]).includes(d.id));
   const proyectos=state.proyectos.filter(p=>p.devIds.includes(d.id));
   const ev=d.eval||{};
   const dims=['tecnica','comunicacion','autonomia','liderazgo'];
@@ -585,6 +604,7 @@ function renderDevDetail(){
   if(d.creadoPor)meta.push(`<span class="meta-tag">Creado por ${esc(d.creadoPor)}</span>`);
   if(d.actualizadoPor)meta.push(`<span class="meta-tag">Editado por ${esc(d.actualizadoPor)}</span>`);
   document.getElementById('dev-detail').innerHTML=`
+    <button class="btn-sec" onclick="showSection('equipo')" style="font-size:12px;margin-bottom:14px">← Volver al equipo</button>
     <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px">
       <div class="avatar-lg" style="background:${c.bg};color:${c.text};width:52px;height:52px;font-size:17px">${initials(d.name)}</div>
       <div style="flex:1">
@@ -620,7 +640,7 @@ function renderDevDetail(){
       ${hitos.map(h=>`<div class="hito-item">
         <div class="hito-icon" style="background:${bgMap[h.tipo]||bgMap.otro}">${icMap[h.tipo]||icMap.otro}</div>
         <div style="flex:1"><div class="hito-text">${esc(h.texto)}</div>
-          <div class="hito-date">${esc(fmtMonth(h.fecha))}${h.registradoPor?' · por '+esc(h.registradoPor):''}</div></div>
+          <div class="hito-date">${esc(fmtMonth(h.fecha))}${hitoWith(h,d.id)}${h.registradoPor?' · por '+esc(h.registradoPor):''}</div>${hitoProjTags(h)}</div>
         <button class="icon-btn" onclick="openModal('hito','${h.id}')" title="Editar">✏️</button>
         <button class="icon-btn" onclick="deleteHito('${h.id}')" title="Eliminar" style="color:#e3a3a3">✕</button>
       </div>`).join('')}
@@ -704,18 +724,20 @@ async function saveDev(id){
   try{
     if(id){const d=state.devs.find(x=>x.id===id);if(d){d.name=name;d.role=role;d.skills=skills;d.actualizadoPor=currentUser();await saveDevRow(d);}}
     else{const dev={id:'dev_'+Date.now(),name,role,color:state.devs.length%COLORS.length,skills,notas:'',eval:{tecnica:0,comunicacion:0,autonomia:0,liderazgo:0},creadoPor:currentUser(),actualizadoPor:'',evaluadoPor:''};state.devs.push(dev);await saveDevRow(dev);}
-    showToast(id?'Actualizado':'Añadido');renderSidebar();refresh();
+    showToast(id?'Actualizado':'Añadido');refresh();
   }catch(e){showToast('Error');console.error(e);}
   setSyncStatus('');
 }
 async function deleteDev(id){
   closeModal();setSyncStatus('Eliminando...');
-  try{await deleteDevRow(id);state.devs=state.devs.filter(d=>d.id!==id);showToast('Eliminado');renderSidebar();showSection('dashboard');}
+  try{await deleteDevRow(id);state.devs=state.devs.filter(d=>d.id!==id);showToast('Eliminado');showSection('equipo');}
   catch(e){showToast('Error');console.error(e);}
   setSyncStatus('');
 }
 async function saveHito(id){
-  const devId=document.getElementById('m-dev').value;
+  const devIds=[...(window._ms.hdev||[])];
+  const proyectoIds=[...(window._ms.hproj||[])];
+  if(!devIds.length){alert('Añade al menos una persona');return;}
   const texto=document.getElementById('m-texto').value.trim();
   if(!texto){alert('La descripción es obligatoria');return;}
   const tipo=document.getElementById('m-tipo').value;
@@ -724,9 +746,9 @@ async function saveHito(id){
   try{
     if(id){
       const h=state.hitos.find(x=>x.id===id);
-      if(h){h.devId=devId;h.texto=texto;h.tipo=tipo;h.fecha=fecha;await saveHitoRow(h);}
+      if(h){h.devIds=devIds;h.proyectoIds=proyectoIds;h.texto=texto;h.tipo=tipo;h.fecha=fecha;await saveHitoRow(h);}
     }else{
-      const h={id:'h_'+Date.now(),devId,texto,tipo,fecha,registradoPor:currentUser()};
+      const h={id:'h_'+Date.now(),devIds,proyectoIds,texto,tipo,fecha,registradoPor:currentUser()};
       state.hitos.push(h);await saveHitoRow(h);
     }
     showToast(id?'Hito actualizado':'Hito añadido');refresh();
@@ -742,7 +764,7 @@ async function saveProyecto(id){
     fechaInicio:document.getElementById('m-pinicio').value.trim(),
     fechaFin:document.getElementById('m-pfin').value.trim(),
     estado:document.getElementById('m-pestado').value,
-    devIds:[...window._projDevs],
+    devIds:[...(window._ms.pdev||[])],
     notas:document.getElementById('m-pnotas').value.trim()
   };
   closeModal();setSyncStatus('Guardando...');
@@ -770,26 +792,63 @@ async function saveEval(devId){
   setSyncStatus('');
 }
 
-// ── Selector buscable de desarrolladores (proyectos) ──
-window._projDevs=new Set();
-function renderProjChips(){
-  const el=document.getElementById('pdev-chips');
-  const cnt=document.getElementById('pdev-count');
+// ── Helpers de hitos ───────────────────────────
+const HITO_ICON={logro:'🏆',bloqueo:'⚠️',mejora:'💡',otro:'📝'};
+function hitoDevNames(h,excludeId){return (h.devIds||[]).filter(id=>id!==excludeId).map(id=>state.devs.find(d=>d.id===id)?.name).filter(Boolean);}
+function hitoWith(h,excludeId){const o=hitoDevNames(h,excludeId);return o.length?' · con '+esc(o.join(', ')):'';}
+function hitoProjTags(h){
+  const n=(h.proyectoIds||[]).map(id=>state.proyectos.find(p=>p.id===id)?.nombre).filter(Boolean);
+  return n.length?`<div class="meta-line" style="margin-top:4px">${n.map(x=>`<span class="meta-tag">📁 ${esc(x)}</span>`).join('')}</div>`:'';
+}
+
+// ── Selector buscable multi-selección (personas / proyectos) ──
+window._ms={};
+function msItems(key){
+  if(key==='hproj')return state.proyectos.map(p=>({id:p.id,label:p.nombre,sub:p.estado,project:true}));
+  return state.devs.map(d=>({id:d.id,label:d.name,sub:d.role,color:d.color}));
+}
+function msBox(key,ph){
+  return `<div class="ms-box" id="ms-box-${key}">
+    <div id="ms-chips-${key}" class="ms-chips"></div>
+    <input id="ms-search-${key}" class="ms-search" placeholder="${ph}" autocomplete="off" oninput="msOpen('${key}')" onfocus="msOpen('${key}')"/>
+    <div id="ms-options-${key}" class="ms-options"></div>
+  </div>`;
+}
+function msInit(key,ids){
+  const items=msItems(key);
+  window._ms[key]=new Set((ids||[]).filter(id=>items.some(i=>i.id===id)));
+  msRender(key);msFilter(key);
+}
+function msRender(key){
+  const sel=window._ms[key]||new Set();
+  const el=document.getElementById('ms-chips-'+key);
+  const cnt=document.getElementById('ms-count-'+key);
+  if(cnt)cnt.textContent=sel.size;
   if(!el)return;
-  const ids=[...window._projDevs];
-  if(cnt)cnt.textContent=ids.length;
-  el.innerHTML=ids.map(id=>{const d=state.devs.find(x=>x.id===id);if(!d)return'';return `<span class="ms-chip">${esc(d.name)}<button onclick="removeProjDev('${id}')" title="Quitar">×</button></span>`;}).join('');
+  const items=msItems(key);
+  el.innerHTML=[...sel].map(id=>{const it=items.find(i=>i.id===id);return it?`<span class="ms-chip">${esc(it.label)}<button type="button" onclick="msRemove('${key}','${id}')" title="Quitar">×</button></span>`:'';}).join('');
 }
-function filterProjDevs(){
-  const q=(document.getElementById('pdev-search')?.value||'').toLowerCase().trim();
-  const opts=document.getElementById('pdev-options');
+function msOpen(key){document.getElementById('ms-box-'+key)?.classList.add('open');msFilter(key);}
+function msFilter(key){
+  const opts=document.getElementById('ms-options-'+key);
   if(!opts)return;
-  const list=state.devs.filter(d=>!window._projDevs.has(d.id)&&(!q||d.name.toLowerCase().includes(q)||(d.role||'').toLowerCase().includes(q)));
-  if(!list.length){opts.innerHTML='<div class="ms-empty">'+(q?'Sin resultados':'Todos añadidos')+'</div>';return;}
-  opts.innerHTML=list.slice(0,50).map(d=>{const c=colorOf(d.color);return `<div class="ms-opt" onclick="addProjDev('${d.id}')"><div class="avatar" style="background:${c.bg};color:${c.text};width:22px;height:22px;font-size:9px">${initials(d.name)}</div><span>${esc(d.name)}</span>${d.role?`<span style="color:var(--muted);font-size:11px;margin-left:auto">${esc(d.role)}</span>`:''}</div>`;}).join('');
+  const q=(document.getElementById('ms-search-'+key)?.value||'').toLowerCase().trim();
+  const sel=window._ms[key]||new Set();
+  const items=msItems(key);
+  const list=items.filter(it=>!sel.has(it.id)&&(!q||it.label.toLowerCase().includes(q)||(it.sub||'').toLowerCase().includes(q)));
+  if(!list.length){opts.innerHTML='<div class="ms-empty">'+(!items.length?'Todavía no hay elementos':q?'Sin resultados':'Todo añadido')+'</div>';return;}
+  opts.innerHTML=list.slice(0,100).map(it=>{
+    const lead=it.project?'<span style="font-size:13px">📁</span>':(()=>{const c=colorOf(it.color);return `<div class="avatar" style="background:${c.bg};color:${c.text};width:22px;height:22px;font-size:9px">${initials(it.label)}</div>`;})();
+    return `<div class="ms-opt" onclick="msAdd('${key}','${it.id}')">${lead}<span>${esc(it.label)}</span>${it.sub?`<span style="color:var(--muted);font-size:11px;margin-left:auto">${esc(it.sub)}</span>`:''}</div>`;
+  }).join('');
 }
-function addProjDev(id){window._projDevs.add(id);const s=document.getElementById('pdev-search');if(s)s.value='';renderProjChips();filterProjDevs();document.getElementById('pdev-search')?.focus();}
-function removeProjDev(id){window._projDevs.delete(id);renderProjChips();filterProjDevs();}
+function msAdd(key,id){
+  (window._ms[key]=window._ms[key]||new Set()).add(id);
+  const s=document.getElementById('ms-search-'+key);if(s)s.value='';
+  msRender(key);msFilter(key);s?.focus();
+}
+function msRemove(key,id){window._ms[key]?.delete(id);msRender(key);msFilter(key);}
+document.addEventListener('mousedown',e=>{document.querySelectorAll('.ms-box.open').forEach(b=>{if(!b.contains(e.target))b.classList.remove('open');});});
 
 // ── Modal builder ──────────────────────────────
 function closeModal(){document.getElementById('modal-root').innerHTML='';}
@@ -797,7 +856,7 @@ function openModal(type,id){
   // exigir responsable seleccionado antes de crear/editar datos
   if(!getUser()){ openUserModal(); showToast('Elige responsable primero'); return; }
   const root=document.getElementById('modal-root');
-  let body='';
+  let body='';let pending=[];
   if(type==='dev'){
     body=`<div class="modal-title">Nuevo desarrollador <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9ca3af;line-height:1">×</button></div>
       <div class="reg-box">👤 Se creará como: <b>${esc(currentUser())}</b></div>
@@ -829,13 +888,13 @@ function openModal(type,id){
     // id puede ser un devId (crear hito para esa persona) o un hitoId (editar)
     const editing=id&&String(id).startsWith('h_');
     const h=editing?state.hitos.find(x=>x.id===id):null;
-    const selDev=editing?(h?h.devId:''):(id||'');
-    const opts=state.devs.map(d=>`<option value="${d.id}"${selDev===d.id?' selected':''}>${esc(d.name)}</option>`).join('');
+    pending=[['hdev',editing?(h?h.devIds:[]):(id?[id]:[])],['hproj',editing&&h?h.proyectoIds:[]]];
     const tipos=[['logro','🏆 Logro'],['bloqueo','⚠️ Bloqueo'],['mejora','💡 Mejora'],['otro','📝 Otro']];
     const tipoOpts=tipos.map(t=>`<option value="${t[0]}"${h&&h.tipo===t[0]?' selected':''}>${t[1]}</option>`).join('');
     body=`<div class="modal-title">${editing?'Editar hito':'Nuevo hito'} <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9ca3af;line-height:1">×</button></div>
       ${editing?(h&&h.registradoPor?`<div class="reg-box">👤 Registrado originalmente por: <b>${esc(h.registradoPor)}</b></div>`:''):`<div class="reg-box">👤 Se registrará como: <b>${esc(currentUser())}</b></div>`}
-      <div class="field"><label>Desarrollador</label><select id="m-dev">${opts}</select></div>
+      <div class="field"><label>Personas (<span id="ms-count-hdev">0</span>)</label>${msBox('hdev','Buscar persona y añadir...')}</div>
+      <div class="field"><label>Proyectos (<span id="ms-count-hproj">0</span>) · opcional</label>${msBox('hproj','Buscar proyecto y añadir...')}</div>
       <div class="field"><label>Descripción</label><textarea id="m-texto" placeholder="Qué ocurrió o se logró...">${h?esc(h.texto):''}</textarea></div>
       <div class="row-flex">
         <div class="field"><label>Tipo</label><select id="m-tipo">${tipoOpts}</select></div>
@@ -844,7 +903,7 @@ function openModal(type,id){
       <div class="modal-actions">${editing?`<button class="btn-danger" onclick="closeModal();deleteHito('${id}')">Eliminar</button>`:''}<button class="btn-sec" onclick="closeModal()">Cancelar</button><button class="btn-primary" onclick="saveHito(${editing?`'${id}'`:''})">${editing?'Guardar':'Añadir'}</button></div>`;
   } else if(type==='proyecto'){
     const p=id?state.proyectos.find(x=>x.id===id):null;
-    window._projDevs=new Set(p?p.devIds.filter(id2=>state.devs.some(d=>d.id===id2)):[]);
+    pending=[['pdev',p?p.devIds:[]]];
     const estados=[['activo','Activo'],['completado','Completado'],['pausado','Pausado']];
     const estOpts=estados.map(e=>`<option value="${e[0]}"${p&&p.estado===e[0]?' selected':''}>${e[1]}</option>`).join('');
     body=`<div class="modal-title">${p?'Editar proyecto':'Nuevo proyecto'} <button onclick="closeModal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:#9ca3af;line-height:1">×</button></div>
@@ -856,12 +915,8 @@ function openModal(type,id){
         <div class="field"><label>Fin (mes, opcional)</label><input type="month" id="m-pfin" value="${p?toMonthInput(p.fechaFin):''}"/></div>
       </div>
       <div class="field"><label>Estado</label><select id="m-pestado">${estOpts}</select></div>
-      <div class="field"><label>Desarrolladores (<span id="pdev-count">0</span>)</label>
-        ${state.devs.length?`<div class="ms-box">
-          <div id="pdev-chips" class="ms-chips"></div>
-          <input id="pdev-search" class="ms-search" placeholder="Buscar por nombre o rol y añadir..." oninput="filterProjDevs()" onfocus="filterProjDevs()"/>
-          <div id="pdev-options" class="ms-options"></div>
-        </div>`:'<span style="font-size:12px;color:var(--muted)">Añade personas primero</span>'}
+      <div class="field"><label>Desarrolladores (<span id="ms-count-pdev">0</span>)</label>
+        ${state.devs.length?msBox('pdev','Buscar por nombre o rol y añadir...'):'<span style="font-size:12px;color:var(--muted)">Añade personas primero</span>'}
       </div>
       <div class="field"><label>Notas</label><textarea id="m-pnotas" style="min-height:50px">${p?esc(p.notas):''}</textarea></div>
       <div class="modal-actions">${p?`<button class="btn-danger" onclick="if(confirm('¿Eliminar proyecto?'))deleteProyecto('${id}')">Eliminar</button>`:''}<button class="btn-sec" onclick="closeModal()">Cancelar</button><button class="btn-primary" onclick="saveProyecto(${p?`'${id}'`:''})">Guardar</button></div>`;
@@ -878,7 +933,7 @@ function openModal(type,id){
       <div class="modal-actions"><button class="btn-sec" onclick="closeModal()">Cancelar</button><button class="btn-primary" onclick="saveEval('${id}')">Guardar</button></div>`;
   }
   root.innerHTML=`<div class="overlay" onclick="if(event.target===this)closeModal()"><div class="modal">${body}</div></div>`;
-  if(type==='proyecto'&&state.devs.length){renderProjChips();filterProjDevs();}
+  pending.forEach(([k,ids])=>msInit(k,ids));
 }
 async function deleteProyecto(id){
   closeModal();setSyncStatus('Eliminando...');
@@ -898,7 +953,7 @@ function init(){
     document.getElementById('app').style.display='flex';
     renderUserChip();
     if(!getUser()) openUserModal();
-    loadAll();
+    ensureHeaders().then(loadAll);
   }
 }
 init();
