@@ -107,16 +107,17 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;backgrou
 .meta-line{font-size:11px;color:var(--muted);margin-top:8px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .meta-tag{background:#f4f6f7;border-radius:6px;padding:2px 8px}
 /* Multi-select buscable (desarrolladores en proyecto) */
-.ms-box{border:1px solid var(--border);border-radius:8px;padding:6px;background:#fff}
+.ms-box{position:relative;border:1px solid var(--border);border-radius:8px;padding:6px;background:#fff}
 .ms-box:focus-within{border-color:var(--teal)}
-.ms-chips{display:flex;flex-wrap:wrap;gap:5px}
+.ms-chips{display:flex;flex-wrap:wrap;gap:5px;max-height:84px;overflow-y:auto}
 .ms-chips:not(:empty){margin-bottom:6px}
 .ms-chip{display:flex;align-items:center;gap:5px;background:#e3f1ef;color:var(--teal-dark);border-radius:100px;padding:3px 5px 3px 9px;font-size:12px;font-weight:600}
 .ms-chip button{background:none;border:none;cursor:pointer;color:var(--teal-dark);font-size:14px;line-height:1;padding:0 2px}
 .ms-chip button:hover{color:var(--red)}
 .ms-search{width:100%;border:none;outline:none;font-size:13px;padding:5px 4px;font-family:inherit;background:transparent;color:var(--dark)}
-.ms-options{display:none;max-height:180px;overflow-y:auto;border-top:1px solid var(--border);margin-top:6px;padding-top:4px}
+.ms-options{display:none;position:absolute;left:-1px;right:-1px;top:100%;margin-top:4px;max-height:180px;overflow-y:auto;background:#fff;border:1px solid var(--border);border-radius:8px;padding:4px;box-shadow:0 8px 24px rgba(6,10,13,0.18);z-index:30}
 .ms-box.open .ms-options{display:block}
+.ms-box.up .ms-options{top:auto;bottom:100%;margin-top:0;margin-bottom:4px}
 .ms-opt{padding:7px 8px;font-size:13px;cursor:pointer;border-radius:6px;display:flex;align-items:center;gap:8px}
 .ms-opt:hover{background:#eef4f3}
 .ms-empty{padding:8px;font-size:12px;color:var(--muted)}
@@ -825,7 +826,18 @@ function msRender(key){
   const items=msItems(key);
   el.innerHTML=[...sel].map(id=>{const it=items.find(i=>i.id===id);return it?`<span class="ms-chip">${esc(it.label)}<button type="button" onclick="msRemove('${key}','${id}')" title="Quitar">×</button></span>`:'';}).join('');
 }
-function msOpen(key){document.getElementById('ms-box-'+key)?.classList.add('open');msFilter(key);}
+function msPlace(key){
+  const box=document.getElementById('ms-box-'+key),opts=document.getElementById('ms-options-'+key);
+  if(!box||!opts||!box.classList.contains('open'))return;
+  const modal=box.closest('.modal'),actions=modal?modal.querySelector('.modal-actions'):null;
+  const b=box.getBoundingClientRect();
+  const below=(actions?actions.getBoundingClientRect().top:window.innerHeight)-b.bottom-8;
+  const above=b.top-(modal?Math.max(modal.getBoundingClientRect().top,0):0)-8;
+  const up=below<150&&above>below;
+  box.classList.toggle('up',up);
+  opts.style.maxHeight=Math.max(100,Math.min(180,up?above:below))+'px';
+}
+function msOpen(key){document.getElementById('ms-box-'+key)?.classList.add('open');msFilter(key);msPlace(key);}
 function msFilter(key){
   const opts=document.getElementById('ms-options-'+key);
   if(!opts)return;
@@ -842,9 +854,9 @@ function msFilter(key){
 function msAdd(key,id){
   (window._ms[key]=window._ms[key]||new Set()).add(id);
   const s=document.getElementById('ms-search-'+key);if(s)s.value='';
-  msRender(key);msFilter(key);s?.focus();
+  msRender(key);msFilter(key);msPlace(key);s?.focus();
 }
-function msRemove(key,id){window._ms[key]?.delete(id);msRender(key);msFilter(key);}
+function msRemove(key,id){window._ms[key]?.delete(id);msRender(key);msFilter(key);msPlace(key);}
 document.addEventListener('mousedown',e=>{document.querySelectorAll('.ms-box.open').forEach(b=>{if(!b.contains(e.target))b.classList.remove('open');});});
 
 // ── Modal builder ──────────────────────────────
