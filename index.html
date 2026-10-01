@@ -351,13 +351,17 @@ async function sheetsUpdate(range, values){
   });
   if(!r.ok) throw new Error(await r.text());
 }
-async function sheetsAppend(range, values){
-  const tok = await getAccessToken();
-  const r = await fetch(`${BASE()}/values/${encodeURIComponent(range)}:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`,{
-    method:'POST', headers:{Authorization:`Bearer ${tok}`,'Content-Type':'application/json'},
-    body:JSON.stringify({values})
-  });
-  if(!r.ok) throw new Error(await r.text());
+// Escribe una fila en una posición explícita. NO usa "append" de la API: con filas en blanco
+// en medio, append desplaza los datos varias columnas. Aquí siempre se escribe en A{fila}.
+async function writeRow(tab,lastCol,vals){
+  const id=vals[0];
+  const rows=await sheetsGet(`${tab}!A2:Z2000`);
+  let i=rows.findIndex(r=>r&&r[0]===id);                       // ya existe: se actualiza en su fila
+  if(i<0)i=rows.length;                                         // nuevo: justo después de la última fila con contenido
+  const row=i+2;
+  await sheetsUpdate(`${tab}!A${row}:${lastCol}${row}`,[vals]);
+  const chk=await sheetsGet(`${tab}!A${row}`);                  // verificación de lo escrito
+  if(!chk[0]||chk[0][0]!==id)throw new Error('No se pudo verificar el guardado en la fila '+row);
 }
 
 // ── State & helpers ────────────────────────────
@@ -373,7 +377,7 @@ const COLORS=[
 let state={devs:[],hitos:[],proyectos:[],currentSection:'dashboard',currentDev:null};
 const colorOf=i=>COLORS[i%COLORS.length];
 const initials=n=>n.trim().split(' ').slice(0,2).map(w=>w[0]).join('').toUpperCase();
-const showToast=msg=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),2500)};
+const showToast=(msg,ms=2500)=>{const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),ms)};
 const setSyncStatus=msg=>{const el=document.getElementById('sync-status');if(el)el.textContent=msg};
 const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const today=()=>new Date().toLocaleDateString('es-ES',{day:'2-digit',month:'short',year:'numeric'});
@@ -418,10 +422,12 @@ async function ensureHeaders(){
 async function loadAll(){
   setSyncStatus('Cargando...');
   try{
-    const [dR,hR,pR]=await Promise.all([sheetsGet(`${TAB_DEVS}!A2:M500`),sheetsGet(`${TAB_HITOS}!A2:G500`),sheetsGet(`${TAB_PROYECTOS}!A2:J500`)]);
+    const [dR,hR,pR]=await Promise.all([sheetsGet(`${TAB_DEVS}!A2:M2000`),sheetsGet(`${TAB_HITOS}!A2:G2000`),sheetsGet(`${TAB_PROYECTOS}!A2:J2000`)]);
     state.devs=dR.filter(r=>r[0]).map(r=>({id:r[0],name:r[1]||'',role:r[2]||'',color:parseInt(r[3]||0),skills:(r[4]||'').split('|').filter(Boolean),notas:r[5]||'',eval:{tecnica:+r[6]||0,comunicacion:+r[7]||0,autonomia:+r[8]||0,liderazgo:+r[9]||0},creadoPor:r[10]||'',actualizadoPor:r[11]||'',evaluadoPor:r[12]||''}));
     state.hitos=hR.filter(r=>r[0]).map(r=>({id:r[0],devIds:(r[1]||'').split('|').filter(Boolean),texto:r[2]||'',tipo:r[3]||'otro',fecha:r[4]||'',registradoPor:r[5]||'',proyectoIds:(r[6]||'').split('|').filter(Boolean)}));
     state.proyectos=pR.filter(r=>r[0]).map(r=>({id:r[0],nombre:r[1]||'',descripcion:r[2]||'',fechaInicio:r[3]||'',fechaFin:r[4]||'',estado:r[5]||'activo',devIds:(r[6]||'').split('|').filter(Boolean),notas:r[7]||'',creadoPor:r[8]||'',actualizadoPor:r[9]||''}));
+    const bad=[['Desarrolladores',dR],['Hitos',hR],['Proyectos',pR]].map(([n,rows])=>[n,rows.filter(r=>r&&!r[0]&&r.some(c=>c)).length]).filter(x=>x[1]);
+    if(bad.length){console.warn('Filas desplazadas',bad);showToast('⚠️ Hay filas desplazadas en la hoja (columna A vacía): '+bad.map(b=>b[0]+' ('+b[1]+')').join(', '),9000);}
     setSyncStatus('Sincronizado');
     setTimeout(()=>setSyncStatus(''),2000);
     refresh();
@@ -431,38 +437,29 @@ async function loadAll(){
   }
 }
 async function saveDevRow(dev){
-  const rows=await sheetsGet(`${TAB_DEVS}!A2:A500`);
-  const i=rows.findIndex(r=>r[0]===dev.id);
   const vals=[[dev.id,dev.name,dev.role,dev.color,dev.skills.join('|'),dev.notas,dev.eval.tecnica,dev.eval.comunicacion,dev.eval.autonomia,dev.eval.liderazgo,dev.creadoPor||'',dev.actualizadoPor||'',dev.evaluadoPor||'']];
-  if(i>=0)await sheetsUpdate(`${TAB_DEVS}!A${i+2}:M${i+2}`,vals);
-  else await sheetsAppend(`${TAB_DEVS}!A:M`,vals);
+  await writeRow(TAB_DEVS,'M',vals[0]);
 }
 async function deleteDevRow(id){
-  const rows=await sheetsGet(`${TAB_DEVS}!A2:A500`);
+  const rows=await sheetsGet(`${TAB_DEVS}!A2:A2000`);
   const i=rows.findIndex(r=>r[0]===id);
   if(i>=0)await sheetsUpdate(`${TAB_DEVS}!A${i+2}:M${i+2}`,[['','','','','','','','','','','','','']]);
 }
 async function saveHitoRow(h){
-  const rows=await sheetsGet(`${TAB_HITOS}!A2:A500`);
-  const i=rows.findIndex(r=>r[0]===h.id);
   const vals=[[h.id,(h.devIds||[]).join('|'),h.texto,h.tipo,h.fecha,h.registradoPor||'',(h.proyectoIds||[]).join('|')]];
-  if(i>=0)await sheetsUpdate(`${TAB_HITOS}!A${i+2}:G${i+2}`,vals);
-  else await sheetsAppend(`${TAB_HITOS}!A:G`,vals);
+  await writeRow(TAB_HITOS,'G',vals[0]);
 }
 async function deleteHitoRow(id){
-  const rows=await sheetsGet(`${TAB_HITOS}!A2:A500`);
+  const rows=await sheetsGet(`${TAB_HITOS}!A2:A2000`);
   const i=rows.findIndex(r=>r[0]===id);
   if(i>=0)await sheetsUpdate(`${TAB_HITOS}!A${i+2}:G${i+2}`,[['','','','','','','']]);
 }
 async function saveProyectoRow(p){
-  const rows=await sheetsGet(`${TAB_PROYECTOS}!A2:A500`);
-  const i=rows.findIndex(r=>r[0]===p.id);
   const vals=[[p.id,p.nombre,p.descripcion,p.fechaInicio,p.fechaFin,p.estado,p.devIds.join('|'),p.notas,p.creadoPor||'',p.actualizadoPor||'']];
-  if(i>=0)await sheetsUpdate(`${TAB_PROYECTOS}!A${i+2}:J${i+2}`,vals);
-  else await sheetsAppend(`${TAB_PROYECTOS}!A:J`,vals);
+  await writeRow(TAB_PROYECTOS,'J',vals[0]);
 }
 async function deleteProyectoRow(id){
-  const rows=await sheetsGet(`${TAB_PROYECTOS}!A2:A500`);
+  const rows=await sheetsGet(`${TAB_PROYECTOS}!A2:A2000`);
   const i=rows.findIndex(r=>r[0]===id);
   if(i>=0)await sheetsUpdate(`${TAB_PROYECTOS}!A${i+2}:J${i+2}`,[['','','','','','','','','','']]);
 }
